@@ -53,8 +53,9 @@ public class MonkeyBot extends ListenerAdapter {
         new Thread() {
             @Override
             public void run() {
-                if (Commands.MONKEY.isCommand(event.getMessage().getContentRaw())) {
-                    Commands.MONKEY.processCommand(event, event.getMessage().getContentRaw());
+                String messageContent = event.getMessage().getContentRaw();
+                if (Commands.MONKEY.isCommand(messageContent) || Commands.MONKEY2.isCommand(messageContent)) {
+                    Commands.MONKEY.processCommand(event, messageContent);
                 }
             }
         }.start();

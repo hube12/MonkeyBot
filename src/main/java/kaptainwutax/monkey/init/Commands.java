@@ -10,6 +10,7 @@ public class Commands {
     public static List<Command> COMMANDS = new ArrayList<Command>();
 
     public static Command MONKEY = new CommandMonkey("monkey");
+    public static Command MONKEY2 = new CommandMonkey("\uD83D\uDC12");
 
     public static Command PING = new CommandPing("ping");
     public static Command PING2 = new CommandPing("\uD83C\uDFD3");
@@ -24,6 +25,7 @@ public class Commands {
 
     public static void registerCommands() {
         registerCommand(MONKEY);
+        registerCommand(MONKEY2);
         registerCommand(PING);
         registerCommand(PING2);
         registerCommand(SAY);
