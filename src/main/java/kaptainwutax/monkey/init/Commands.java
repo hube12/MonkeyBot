@@ -1,9 +1,6 @@
 package kaptainwutax.monkey.init;
 
-import kaptainwutax.monkey.command.Command;
-import kaptainwutax.monkey.command.CommandMonkey;
-import kaptainwutax.monkey.command.CommandPing;
-import kaptainwutax.monkey.command.CommandSummary;
+import kaptainwutax.monkey.command.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +13,8 @@ public class Commands {
 
     public static Command PING = new CommandPing("ping");
     public static Command PING2 = new CommandPing("\uD83C\uDFD3");
+    public static Command SAY = new CommandSay("say");
+
     public static Command SUMMARY = new CommandSummary("summary");
 
 
@@ -27,6 +26,7 @@ public class Commands {
         registerCommand(MONKEY);
         registerCommand(PING);
         registerCommand(PING2);
+        registerCommand(SAY);
         registerCommand(SUMMARY);
     }
 
