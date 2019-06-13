@@ -18,11 +18,13 @@ public class CommandSummary extends Command {
     public void processCommand(MessageReceivedEvent message, String rawCommand) {
         rawCommand = this.removePrefix(rawCommand);
 
-        if(rawCommand.startsWith("setSummaryChannel")) {
+        if (rawCommand.startsWith("setSummaryChannel")) {
             this.setSummaryChannel(message, rawCommand.substring("setSummaryChannel".length()).trim());
-        } if(rawCommand.startsWith("addChannel")) {
+        }
+        if (rawCommand.startsWith("addChannel")) {
             this.addChannel(message, rawCommand.substring("addChannel".length()).trim());
-        } if(rawCommand.startsWith("removeChannel")) {
+        }
+        if (rawCommand.startsWith("removeChannel")) {
             this.removeChannel(message, rawCommand.substring("removeChannel".length()).trim());
         }
 
@@ -48,19 +50,24 @@ public class CommandSummary extends Command {
             newPrevMessageId = summaryChannel.getLatestMessageIdLong();
 
             //This is such a big hackfix your eyes will bleed. If I don't slow it down, the thread times out.
-            try {Thread.sleep(200); } catch (InterruptedException e) { e.printStackTrace(); }
-        } while(prevMessageId == newPrevMessageId);
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        } while (prevMessageId == newPrevMessageId);
 
         server.summaryMessageId = newPrevMessageId;
         Log.edit(summaryChannel, newPrevMessageId, server.getSummaryMessage());
-   }
+    }
 
     public void removeSummaryChannel(MessageReceivedEvent message) {
         HolderGuild server = Guilds.registerServer(new HolderGuild(message.getGuild()));
         TextChannel summaryChannel = null;
-        if(server.summaryChannel != null)summaryChannel = message.getGuild().getTextChannelById(server.summaryChannel);
+        if (server.summaryChannel != null)
+            summaryChannel = message.getGuild().getTextChannelById(server.summaryChannel);
 
-        if(summaryChannel == null || server.summaryMessageId == 0) {
+        if (summaryChannel == null || server.summaryMessageId == 0) {
             return;
         }
 
@@ -73,7 +80,7 @@ public class CommandSummary extends Command {
         HolderGuild server = Guilds.registerServer(new HolderGuild(message.getGuild()));
         TextChannel summaryChannel = null;
 
-        if(server.summaryChannel != null) {
+        if (server.summaryChannel != null) {
             summaryChannel = message.getGuild().getTextChannelById(server.summaryChannel);
         } else {
             Log.print(message.getTextChannel(), "Summary channel doesn't exist.");
@@ -82,11 +89,11 @@ public class CommandSummary extends Command {
 
         TextChannel targetChannel = message.getGuild().getTextChannelById(channelId.substring(2).replaceFirst(">", ""));
 
-        if(targetChannel != null && !Channels.isChannelInSummary(server, channelId)) {
+        if (targetChannel != null && !Channels.isChannelInSummary(server, channelId)) {
             server.channels.add(new HolderChannel(targetChannel));
         }
 
-        if(server.summaryMessageId != 0) {
+        if (server.summaryMessageId != 0) {
             Log.edit(summaryChannel, server.summaryMessageId, server.getSummaryMessage());
         }
     }
@@ -94,13 +101,14 @@ public class CommandSummary extends Command {
     public void removeChannel(MessageReceivedEvent message, String channelId) {
         HolderGuild server = Guilds.registerServer(new HolderGuild(message.getGuild()));
         TextChannel summaryChannel = null;
-        if(server.summaryChannel != null)summaryChannel = message.getGuild().getTextChannelById(server.summaryChannel);
+        if (server.summaryChannel != null)
+            summaryChannel = message.getGuild().getTextChannelById(server.summaryChannel);
 
         TextChannel targetChannel = message.getGuild().getTextChannelById(channelId.substring(2).replaceFirst(">", ""));
 
         server.channels.remove(new HolderChannel(targetChannel));
 
-        if(server.summaryMessageId != 0 && summaryChannel != null) {
+        if (server.summaryMessageId != 0 && summaryChannel != null) {
             Log.edit(summaryChannel, server.summaryMessageId, server.getSummaryMessage());
         }
     }

@@ -12,32 +12,33 @@ import javax.annotation.Nonnull;
 import javax.security.auth.login.LoginException;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.util.ArrayList;
-import java.util.List;
 
 public class MonkeyBot extends ListenerAdapter {
 
     private static MonkeyBot instance;
     public MonkeyConfig config;
 
-    public MonkeyBot(MonkeyConfig config) {
-        this.config = config;
+    public MonkeyBot() {
     }
 
     public static MonkeyBot instance() {
+        if (instance == null) instance = new MonkeyBot();
         return instance;
     }
 
     public static void main(String[] args) throws LoginException {
-        MonkeyConfig config;
+        MonkeyBot monkeyBot = instance();
+
         try {
-            config = new Gson().fromJson(new FileReader("config.json"), MonkeyConfig.class);
+            monkeyBot.config = new Gson().fromJson(new FileReader("config.json"), MonkeyConfig.class);
         } catch (FileNotFoundException e) {
-            System.err.println("Couldn't find config file");
+            System.err.println("Couldn't find config file.");
             return;
         }
 
         JDABuilder builder = new JDABuilder(AccountType.BOT);
+        builder.setToken(monkeyBot.config.token);
+        builder.addEventListeners(instance());
         builder.build();
 
         Commands.registerCommands();
@@ -45,14 +46,14 @@ public class MonkeyBot extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
-        if(event.getAuthor().isBot()) {
-           return;
+        if (event.getAuthor().isBot()) {
+            return;
         }
 
         new Thread() {
             @Override
             public void run() {
-                if(Commands.MONKEY.isCommand(event.getMessage().getContentRaw())) {
+                if (Commands.MONKEY.isCommand(event.getMessage().getContentRaw())) {
                     Commands.MONKEY.processCommand(event, event.getMessage().getContentRaw());
                 }
             }

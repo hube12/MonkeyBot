@@ -22,10 +22,10 @@ public class HolderGuild {
     public String getSummaryMessage() {
         String message = "Channel Summaries : \n";
 
-        for(HolderChannel c : this.channels) {
+        for (HolderChannel c : this.channels) {
             TextChannel channel = c.getChannel();
 
-            message += "**" + channel.getName() + "** : "+ channel.getTopic() + ".";
+            message += "**" + channel.getName() + "** : " + channel.getTopic() + ".";
             message += "\n";
         }
 
@@ -38,7 +38,7 @@ public class HolderGuild {
 
     @Override
     public boolean equals(Object obj) {
-        HolderGuild target = ((HolderGuild)obj);
+        HolderGuild target = ((HolderGuild) obj);
         return target.id.equals(this.id);
     }
 

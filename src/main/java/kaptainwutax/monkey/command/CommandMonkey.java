@@ -13,8 +13,8 @@ public class CommandMonkey extends Command {
     public void processCommand(MessageReceivedEvent message, String rawCommand) {
         rawCommand = this.removePrefix(rawCommand);
 
-        for(Command command : Commands.COMMANDS) {
-            if(command.isCommand(rawCommand)) {
+        for (Command command : Commands.COMMANDS) {
+            if (command.isCommand(rawCommand)) {
                 command.processCommand(message, rawCommand);
                 return;
             }
