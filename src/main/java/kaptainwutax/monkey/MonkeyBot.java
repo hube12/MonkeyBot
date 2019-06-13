@@ -14,11 +14,9 @@ import java.util.List;
 
 public class MonkeyBot extends ListenerAdapter {
 
-    public static List<HolderGuild> servers = new ArrayList<HolderGuild>();
-
     public static void main(String[] args) throws LoginException {
         JDABuilder builder = new JDABuilder(AccountType.BOT);
-        String token = "NTcyODE3NDgzNDg5MjE0NDc1.XMh1hA.61vD5aGdVMIMkFNOuLj8Scy21Dw";
+        String token = "You wish...";
         builder.setToken(token);
         builder.addEventListeners(new MonkeyBot());
         builder.build();
@@ -40,30 +38,6 @@ public class MonkeyBot extends ListenerAdapter {
                 }
             }
         }.start();
-
-        /*
-
-        new Thread() {
-            @Override
-            public void run() {
-                new CommandSummary().processCommand(event);
-            }
-        }.start();
-
-        List<String> pings = new ArrayList<String>();
-        pings.add("monkey ping");
-        pings.add("monkey \uD83C\uDFD3");
-
-        if(pings.contains(event.getMessage().getContentRaw())) {
-            event.getChannel().sendMessage("Pong!").queue();
-        }
-
-        if(event.getMessage().getContentRaw().startsWith("monkey say ")) {
-            String text = event.getMessage().getContentRaw().substring(11).toLowerCase();
-            event.getChannel().sendMessage(text).queue();
-        }*/
     }
-
-
 
 }

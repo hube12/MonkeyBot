@@ -15,6 +15,7 @@ public class Commands {
     public static Command MONKEY = new CommandMonkey("monkey");
 
     public static Command PING = new CommandPing("ping");
+    public static Command PING2 = new CommandPing("\uD83C\uDFD3");
     public static Command SUMMARY = new CommandSummary("summary");
 
 
@@ -25,6 +26,7 @@ public class Commands {
     public static void registerCommands() {
         registerCommand(MONKEY);
         registerCommand(PING);
+        registerCommand(PING2);
         registerCommand(SUMMARY);
     }
 

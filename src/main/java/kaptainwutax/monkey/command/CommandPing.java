@@ -10,8 +10,6 @@ public class CommandPing extends Command {
 
     @Override
     public void processCommand(MessageReceivedEvent message, String rawCommand) {
-        this.removePrefix(rawCommand);
-
         message.getChannel().sendMessage("Pong!").queue();
     }
 

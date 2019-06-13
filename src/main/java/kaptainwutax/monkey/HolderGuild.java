@@ -19,24 +19,6 @@ public class HolderGuild {
         this.id = guild.getId();
     }
 
-    public static HolderGuild getFromId(Guild guild) {
-        for(HolderGuild s : MonkeyBot.servers) {
-            if(s.id.equals(guild.getId()))return s;
-        }
-
-        return null;
-    }
-
-    public void addChannel(String channel) {
-        HolderChannel channelHolder = new HolderChannel(this.guild.getTextChannelById(channel));
-
-        for(HolderChannel c : this.channels) {
-            if(c.equals(channel))return;
-        }
-
-        this.channels.add(channelHolder);
-    }
-
     public String getSummaryMessage() {
         String message = "Channel Summaries : \n";
 
