@@ -21,7 +21,7 @@ public abstract class Command {
     }
 
     public String removePrefix(String command) {
-        return command.trim().substring(this.prefix.length()).trim();
+        return command.trim().replaceFirst(this.prefix, "").trim();
     }
 
 }

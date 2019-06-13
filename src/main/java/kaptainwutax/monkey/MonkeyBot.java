@@ -50,6 +50,8 @@ public class MonkeyBot extends ListenerAdapter {
             return;
         }
 
+        System.out.println(event.getMessage().getContentRaw() + " : " + "\uD83D\uDC12");
+
         new Thread() {
             @Override
             public void run() {
