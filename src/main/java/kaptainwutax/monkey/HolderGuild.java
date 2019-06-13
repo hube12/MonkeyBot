@@ -20,7 +20,7 @@ public class HolderGuild {
     }
 
     public static HolderGuild getFromId(Guild guild) {
-        for(HolderGuild s : MonkeyBot.servers) {
+        for(HolderGuild s : MonkeyBot.instance().servers) {
             if(s.id.equals(guild.getId()))return s;
         }
 
