@@ -1,4 +1,4 @@
-package kaptainwutax.monkey;
+package kaptainwutax.monkey.holder;
 
 import net.dv8tion.jda.api.entities.TextChannel;
 

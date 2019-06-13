@@ -1,6 +1,6 @@
 package kaptainwutax.monkey.init;
 
-import kaptainwutax.monkey.HolderGuild;
+import kaptainwutax.monkey.holder.HolderGuild;
 import net.dv8tion.jda.api.entities.Guild;
 
 import javax.annotation.Nullable;

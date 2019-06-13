@@ -1,7 +1,7 @@
 package kaptainwutax.monkey.init;
 
-import kaptainwutax.monkey.HolderChannel;
-import kaptainwutax.monkey.HolderGuild;
+import kaptainwutax.monkey.holder.HolderChannel;
+import kaptainwutax.monkey.holder.HolderGuild;
 
 public class Channels {
 

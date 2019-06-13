@@ -1,7 +1,7 @@
 package kaptainwutax.monkey.command;
 
-import kaptainwutax.monkey.HolderChannel;
-import kaptainwutax.monkey.HolderGuild;
+import kaptainwutax.monkey.holder.HolderChannel;
+import kaptainwutax.monkey.holder.HolderGuild;
 import kaptainwutax.monkey.init.Channels;
 import kaptainwutax.monkey.init.Guilds;
 import kaptainwutax.monkey.utility.Log;
