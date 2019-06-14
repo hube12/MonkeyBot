@@ -50,15 +50,10 @@ public class MonkeyBot extends ListenerAdapter {
             return;
         }
 
-        new Thread() {
-            @Override
-            public void run() {
-                String messageContent = event.getMessage().getContentRaw();
-                if (Commands.MONKEY.isCommand(messageContent) || Commands.MONKEY2.isCommand(messageContent)) {
-                    Commands.MONKEY.processCommand(event, messageContent);
-                }
-            }
-        }.start();
+        String messageContent = event.getMessage().getContentRaw();
+        if (Commands.MONKEY.isCommand(messageContent) || Commands.MONKEY2.isCommand(messageContent)) {
+            Commands.MONKEY.processCommand(event, messageContent);
+        }
     }
 
 }

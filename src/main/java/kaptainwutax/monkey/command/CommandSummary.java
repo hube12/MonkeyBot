@@ -27,8 +27,6 @@ public class CommandSummary extends Command {
         if (rawCommand.startsWith("removeChannel")) {
             this.removeChannel(message, rawCommand.substring("removeChannel".length()).trim());
         }
-
-        message.getChannel().sendMessage("[Finished execution without timeout.]").queue();
     }
 
     public void setSummaryChannel(MessageReceivedEvent message, String channelId) {
@@ -39,26 +37,10 @@ public class CommandSummary extends Command {
 
         TextChannel summaryChannel = message.getGuild().getTextChannelById(server.summaryChannel);
 
-        long prevMessageId = summaryChannel.getLatestMessageIdLong();
-
-        Log.print(summaryChannel, "Couldn't setup the summary channel...");
-
-        long newPrevMessageId = 0;
-
-        //Hackfix but all I could do. I need to wait for the message to be sent offthread and catch it here.
-        do {
-            newPrevMessageId = summaryChannel.getLatestMessageIdLong();
-
-            //This is such a big hackfix your eyes will bleed. If I don't slow it down, the thread times out.
-            try {
-                Thread.sleep(200);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        } while (prevMessageId == newPrevMessageId);
-
-        server.summaryMessageId = newPrevMessageId;
-        Log.edit(summaryChannel, newPrevMessageId, server.getSummaryMessage());
+        summaryChannel.sendMessage("Couldn't setup the summary channel...").queue(msg -> {
+            server.summaryMessageId = msg.getIdLong();
+            Log.edit(summaryChannel, msg.getIdLong(), server.getSummaryMessage());
+        });
     }
 
     public void removeSummaryChannel(MessageReceivedEvent message) {
