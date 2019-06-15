@@ -1,5 +1,6 @@
 package kaptainwutax.monkey.command;
 
+import kaptainwutax.monkey.utility.StrUtils;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 public abstract class Command {
@@ -21,7 +22,7 @@ public abstract class Command {
     }
 
     public String removePrefix(String command) {
-        return command.trim().replaceFirst(this.prefix, "").trim();
+        return StrUtils.removeFirstTrim(command, this.prefix);
     }
 
 }

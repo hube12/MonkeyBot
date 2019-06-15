@@ -5,6 +5,7 @@ import kaptainwutax.monkey.holder.HolderGuild;
 import kaptainwutax.monkey.init.Channels;
 import kaptainwutax.monkey.init.Guilds;
 import kaptainwutax.monkey.utility.Log;
+import kaptainwutax.monkey.utility.StrUtils;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
@@ -19,13 +20,13 @@ public class CommandSummary extends Command {
         rawCommand = this.removePrefix(rawCommand);
 
         if (rawCommand.startsWith("setSummaryChannel")) {
-            this.setSummaryChannel(message, rawCommand.substring("setSummaryChannel".length()).trim());
+            this.setSummaryChannel(message, StrUtils.removeFirstTrim(rawCommand, "setSummaryChannel"));
         }
         if (rawCommand.startsWith("addChannel")) {
-            this.addChannel(message, rawCommand.substring("addChannel".length()).trim());
+            this.addChannel(message, StrUtils.removeFirstTrim(rawCommand, "addChannel"));
         }
         if (rawCommand.startsWith("removeChannel")) {
-            this.removeChannel(message, rawCommand.substring("removeChannel".length()).trim());
+            this.removeChannel(message, StrUtils.removeFirstTrim(rawCommand, "removeChannel"));
         }
     }
 
@@ -33,7 +34,7 @@ public class CommandSummary extends Command {
         HolderGuild server = Guilds.registerServer(new HolderGuild(message.getGuild()));
 
         removeSummaryChannel(message);
-        server.summaryChannel = channelId.substring(2).replaceFirst(">", "");
+        server.summaryChannel = StrUtils.getChannelId(channelId);
 
         TextChannel summaryChannel = message.getGuild().getTextChannelById(server.summaryChannel);
 
@@ -69,7 +70,7 @@ public class CommandSummary extends Command {
             return;
         }
 
-        TextChannel targetChannel = message.getGuild().getTextChannelById(channelId.substring(2).replaceFirst(">", ""));
+        TextChannel targetChannel = message.getGuild().getTextChannelById(StrUtils.getChannelId(channelId));
 
         if (targetChannel != null && !Channels.isChannelInSummary(server, channelId)) {
             server.channels.add(new HolderChannel(targetChannel));
@@ -86,7 +87,7 @@ public class CommandSummary extends Command {
         if (server.summaryChannel != null)
             summaryChannel = message.getGuild().getTextChannelById(server.summaryChannel);
 
-        TextChannel targetChannel = message.getGuild().getTextChannelById(channelId.substring(2).replaceFirst(">", ""));
+        TextChannel targetChannel = message.getGuild().getTextChannelById(StrUtils.getChannelId(channelId));
 
         server.channels.remove(new HolderChannel(targetChannel));
 
