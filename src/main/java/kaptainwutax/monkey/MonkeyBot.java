@@ -29,9 +29,8 @@ public class MonkeyBot extends ListenerAdapter {
     public static void main(String[] args) throws LoginException {
         MonkeyBot monkeyBot = instance();
 
-        try {
-            monkeyBot.config = new Gson().fromJson(new FileReader("config.json"), MonkeyConfig.class);
-        } catch (FileNotFoundException e) {
+        try {monkeyBot.config = MonkeyConfig.generateConfig("config.json");}
+        catch (FileNotFoundException e) {
             System.err.println("Couldn't find config file.");
             return;
         }

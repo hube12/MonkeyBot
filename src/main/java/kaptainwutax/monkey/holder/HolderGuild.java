@@ -1,7 +1,9 @@
 package kaptainwutax.monkey.holder;
 
+import kaptainwutax.monkey.utility.Log;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,14 +21,20 @@ public class HolderGuild {
         this.id = guild.getId();
     }
 
+    public void updateSummaryMessage(MessageReceivedEvent message) {
+        if(summaryChannel == null) {
+            Log.print(message.getTextChannel(), "Summary channel doesn't exist.");
+            return;
+        }
+
+        Log.edit(this.guild.getTextChannelById(this.summaryChannel), this.summaryMessageId, this.getSummaryMessage());
+    }
+
     public String getSummaryMessage() {
         String message = "Channel Summaries : \n";
 
-        for (HolderChannel c : this.channels) {
-            TextChannel channel = c.getChannel();
-
-            message += "**" + channel.getName() + "** : " + channel.getTopic() + ".";
-            message += "\n";
+        for (HolderChannel channel : this.channels) {
+            message += channel.getIdAsMessage() + ": " + channel.getDescription() + "\n";
         }
 
         return message;

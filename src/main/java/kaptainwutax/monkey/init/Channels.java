@@ -9,7 +9,7 @@ public class Channels {
         if (server == null) return false;
 
         for (HolderChannel channel : server.channels) {
-            if (channel.getIdAsMessage().equals(channelId)) return true;
+            if(channel.getIdAsMessage().equals(channelId))return true;
         }
 
         return false;

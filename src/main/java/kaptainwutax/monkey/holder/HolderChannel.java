@@ -1,15 +1,18 @@
 package kaptainwutax.monkey.holder;
 
+import kaptainwutax.monkey.utility.StrUtils;
 import net.dv8tion.jda.api.entities.TextChannel;
 
 public class HolderChannel {
 
     private TextChannel channel;
     private String id;
+    private String description;
 
     public HolderChannel(TextChannel channel) {
         this.channel = channel;
         this.id = channel.getId();
+        this.resetDescription();
     }
 
     public TextChannel getChannel() {
@@ -21,7 +24,19 @@ public class HolderChannel {
     }
 
     public String getIdAsMessage() {
-        return "<@" + this.id + ">";
+        return StrUtils.getChannelIdAsMessage(this.id);
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void resetDescription() {
+        this.description = this.channel.getTopic();
     }
 
     @Override
