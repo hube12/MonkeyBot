@@ -2,7 +2,6 @@ package kaptainwutax.monkey.holder;
 
 import kaptainwutax.monkey.utility.Log;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 import java.util.ArrayList;
@@ -33,7 +32,7 @@ public class HolderGuild {
     public String getSummaryMessage() {
         String message = "Channel Summaries : \n";
 
-        for (HolderChannel channel : this.channels) {
+        for(HolderChannel channel : this.channels) {
             message += channel.getIdAsMessage() + ": " + channel.getDescription() + "\n";
         }
 

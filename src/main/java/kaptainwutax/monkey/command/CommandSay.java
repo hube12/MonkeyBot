@@ -1,6 +1,5 @@
 package kaptainwutax.monkey.command;
 
-import kaptainwutax.monkey.utility.Log;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 public class CommandSay extends Command {

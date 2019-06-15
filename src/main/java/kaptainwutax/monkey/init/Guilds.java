@@ -14,12 +14,12 @@ public class Guilds {
     public List<HolderGuild> SERVERS = new ArrayList<HolderGuild>();
 
     public static Guilds instance() {
-        if(INSTANCE == null)INSTANCE = new Guilds();
+        if(INSTANCE == null) INSTANCE = new Guilds();
         return INSTANCE;
     }
 
     public HolderGuild registerServer(HolderGuild server) {
-        if (!this.isServerRegistered(server)) {
+        if(!this.isServerRegistered(server)) {
             this.SERVERS.add(server);
             return server;
         }
@@ -35,7 +35,7 @@ public class Guilds {
 
     public boolean isServerRegistered(HolderGuild server) {
         for(HolderGuild s : this.SERVERS) {
-            if (server.equals(s)) return true;
+            if(server.equals(s)) return true;
         }
 
         return false;

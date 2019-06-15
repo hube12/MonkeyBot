@@ -46,7 +46,7 @@ public class HolderChannel {
 
     @Override
     public boolean equals(Object obj) {
-        return (obj instanceof HolderChannel ? ((HolderChannel) obj).getId().equals(this.id) : false);
+        return (obj instanceof HolderChannel && ((HolderChannel) obj).getId().equals(this.id));
     }
 
 }
