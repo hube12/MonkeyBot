@@ -16,3 +16,5 @@ dependencies {
     compile 'net.dv8tion:JDA:4.ALPHA.0_82'
     compile 'com.google.code.gson:gson:2.8.5'
 }
+
+task stage(dependsOn: ['build', 'clean'])
