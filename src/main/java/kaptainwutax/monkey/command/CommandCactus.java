@@ -6,7 +6,7 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 public class CommandCactus extends Command {
 
-    private static final String MESSAGE[] = {"......", ", very lame.", " jrek.", " ¯\\_(ツ)_/¯.", ", you have higher than average IQ.", ", impressive.", " epic brainer.", " you legend."};
+    private static final String[] MESSAGE = {"......", ", very lame.", " jrek.", " ¯\\_(ツ)_/¯.", ", you have higher than average IQ.", ", impressive.", " epic brainer.", " you legend."};
 
     public CommandCactus(String prefix) {
         super(prefix);

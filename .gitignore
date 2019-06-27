@@ -3,7 +3,6 @@
 *.lock
 *.properties
 *.xml
-gradle/wrapper/gradle-wrapper.jar
 .idea/.name
 build/
 /out/
