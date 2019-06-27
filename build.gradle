@@ -17,4 +17,7 @@ dependencies {
     compile 'com.google.code.gson:gson:2.8.5'
 }
 
-task stage(dependsOn: ['build', 'clean'])
+task stage(dependsOn: ['build', 'clean']) {
+    main = MonkeyBot
+    classpath = kaptainwutax.monkey
+}
