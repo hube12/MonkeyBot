@@ -15,6 +15,7 @@ public class Commands {
     public static Command PING = new CommandPing("ping");
     public static Command PING2 = new CommandPing("\uD83C\uDFD3");
     public static Command SAY = new CommandSay("say");
+    public static Command CACTUS = new CommandCactus("cactus");
 
     public static Command SUMMARY = new CommandSummary("summary");
 
@@ -30,6 +31,7 @@ public class Commands {
         registerCommand(PING2);
         registerCommand(SAY);
         registerCommand(SUMMARY);
+        registerCommand(CACTUS);
     }
 
 }

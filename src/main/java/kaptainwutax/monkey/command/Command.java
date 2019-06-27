@@ -18,7 +18,7 @@ public abstract class Command {
     }
 
     public boolean isCommand(String command) {
-        return command.trim().toLowerCase().startsWith(this.prefix);
+        return command.trim().startsWith(this.prefix);
     }
 
     public String removePrefix(String command) {
