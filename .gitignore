@@ -3,8 +3,9 @@
 *.lock
 *.xml
 .idea/.name
-build/
 /out/
+build/classes/
+build/tmp/
 config.json
 
 \.gradle/vcs-1/
