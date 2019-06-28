@@ -21,9 +21,16 @@ dependencies {
 jar {
     manifest {
         attributes(
-                'Main-Class': 'kaptainwutax.monkey.MonkeyBot'
+            'Class-Path': '/libs/monkey.jar',
+            'Main-Class': 'kaptainwutax.monkey.MonkeyBot'
         )
     }
+}
+
+shadowJar {
+    baseName = 'monkey'
+    classifier = null
+    version = null
 }
 
 task stage(dependsOn: ['build', 'clean', 'shadowJar']) {
