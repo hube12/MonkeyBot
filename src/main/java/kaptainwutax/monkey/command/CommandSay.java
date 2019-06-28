@@ -12,7 +12,7 @@ public class CommandSay extends Command {
     public void processCommand(MessageReceivedEvent message, String rawCommand) {
         rawCommand = this.removePrefix(rawCommand);
 
-        message.getChannel().sendMessage(rawCommand).queue();
+        //message.getChannel().sendMessage(rawCommand).queue();
     }
 
 }
