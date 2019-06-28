@@ -1,6 +1,7 @@
 package kaptainwutax.monkey;
 
 import kaptainwutax.monkey.init.Commands;
+import kaptainwutax.monkey.utility.Log;
 import kaptainwutax.monkey.utility.MonkeyConfig;
 import net.dv8tion.jda.api.AccountType;
 import net.dv8tion.jda.api.JDABuilder;
@@ -10,6 +11,7 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import javax.annotation.Nonnull;
 import javax.security.auth.login.LoginException;
 import java.io.FileNotFoundException;
+import java.util.Scanner;
 
 public class MonkeyBot extends ListenerAdapter {
 
@@ -18,7 +20,6 @@ public class MonkeyBot extends ListenerAdapter {
 
     public MonkeyBot() {
     }
-
 
     public static MonkeyBot instance() {
         if(instance == null) instance = new MonkeyBot();
@@ -31,8 +32,14 @@ public class MonkeyBot extends ListenerAdapter {
         try {
             monkeyBot.config = MonkeyConfig.generateConfig("config.json");
         } catch(FileNotFoundException e) {
-            System.err.println("Couldn't find config file.");
-            return;
+            System.err.println("Couldn't find config file. Looking for environment variables...");
+            monkeyBot.config = new MonkeyConfig();
+            monkeyBot.config.token = System.getenv("TOKEN");
+
+            if(monkeyBot.config.token == null) {
+                System.err.println("Couldn't find the variable either.");
+                return;
+            }
         }
 
         JDABuilder builder = new JDABuilder(AccountType.BOT);
