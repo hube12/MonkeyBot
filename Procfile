@@ -1,1 +1,1 @@
-worker: java -cp build/libs/monkey.jar kaptainwutax.monkey.MonkeyBot
+worker: java -jar build/libs/monkey-1.0-all.jar

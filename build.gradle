@@ -28,9 +28,3 @@ dependencies {
 
 task stage(dependsOn: ['build', 'clean', 'shadowJar']) {
 }
-
-shadowJar {
-    baseName = 'monkey'
-    classifier = null
-    version = null
-}
