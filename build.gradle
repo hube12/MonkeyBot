@@ -17,7 +17,7 @@ dependencies {
     compile 'com.google.code.gson:gson:2.8.5'
 }
 
-task stage(type: JavaExec, dependsOn: ['build', 'clean']) {
+task stage(type: JavaExec, dependsOn: ['build']) {
     classpath = sourceSets.main.runtimeClasspath
     main = 'kaptainwutax.monkey.MonkeyBot'
 }
