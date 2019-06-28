@@ -26,11 +26,3 @@ shadowJar {
     classifier = null
     version = null
 }
-
-jar {
-    manifest {
-        attributes(
-                'Main-Class': 'kaptainwutax.monkey.MonkeyBot'
-        )
-    }
-}
