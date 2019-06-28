@@ -21,7 +21,6 @@ dependencies {
 jar {
     manifest {
         attributes(
-            'Class-Path': 'kaptainwutax.monkey.main',
             'Main-Class': 'kaptainwutax.monkey.MonkeyBot'
         )
     }
