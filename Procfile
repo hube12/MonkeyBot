@@ -1,1 +1,1 @@
-worker: java -jar build/libs/monkey-1.0-all.jar
+worker: java -jar build/libs/monkey.jar

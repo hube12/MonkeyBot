@@ -21,7 +21,7 @@ dependencies {
 jar {
     manifest {
         attributes(
-            'Class-Path': '/libs/monkey.jar',
+            'Class-Path': configurations.runtimeClasspath.files.collect { it.getName() }.join(' '),
             'Main-Class': 'kaptainwutax.monkey.MonkeyBot'
         )
     }
