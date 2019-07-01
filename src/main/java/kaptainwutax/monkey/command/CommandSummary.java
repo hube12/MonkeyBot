@@ -23,18 +23,16 @@ public class CommandSummary extends Command {
 
         if(!message.getMember().hasPermission(Permission.ADMINISTRATOR))return;
 
-        if(rawCommand.startsWith("setSummaryChannel")) {
-            this.setSummaryChannel(message, StrUtils.removeFirstTrim(rawCommand, "setSummaryChannel"));
-        } else if(rawCommand.startsWith("addChannel")) {
-            this.addChannel(message, StrUtils.removeFirstTrim(rawCommand, "addChannel"), false);
-        } else if(rawCommand.startsWith("removeChannel")) {
-            this.removeChannel(message, StrUtils.removeFirstTrim(rawCommand, "removeChannel"), false);
+        if(rawCommand.startsWith("setChannel")) {
+            this.setSummaryChannel(message, StrUtils.removeFirstTrim(rawCommand, "setChannel"));
+        } else if(rawCommand.startsWith("add")) {
+            this.addChannel(message, StrUtils.removeFirstTrim(rawCommand, "add"), false);
+        } else if(rawCommand.startsWith("remove")) {
+            this.removeChannel(message, StrUtils.removeFirstTrim(rawCommand, "remove"), false);
         } else if(rawCommand.startsWith("setDescription")) {
             this.setDescription(message, StrUtils.removeFirstTrim(rawCommand, "setDescription"), false);
         } else if(rawCommand.startsWith("resetDescription")) {
             this.resetDescription(message, StrUtils.removeFirstTrim(rawCommand, "resetDescription"), false);
-        } else if(rawCommand.startsWith("calibrateSummaryMessage")) {
-            this.calibrateSummaryMessage(message);
         } else {
             return;
         }
@@ -140,20 +138,14 @@ public class CommandSummary extends Command {
     }
 
 
-    private void calibrateSummaryMessage(MessageReceivedEvent message) {
-        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(message.getGuild()));
-        server.updateSummaryMessage(message);
-    }
-
     @Override
     public String[] getCommandDesc() {
         return new String[] {
-                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "setSummaryChannel <#channel> ` : Sets the summary channel.",
-                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "addChannel <#channel> ` : Add a channel to summary.",
-                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "removeChannel <#channel> ` : Remove a channel from summary.",
+                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "setChannel <#channel> ` : Sets the summary channel.",
+                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "add <#channel> ` : Add a channel to summary.",
+                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "remove <#channel> ` : Remove a channel from summary.",
                 "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "setDescription <#channel> <message> ` : Sets the description of a channel.",
                 "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "resetDescription <#channel> ` : Resets the description of a channel.",
-                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "calibrateSummaryMessage` : If I go offline, run this command to refresh the summary message."
         };
     }
 
