@@ -1,5 +1,6 @@
 package kaptainwutax.monkey.init;
 
+import kaptainwutax.monkey.MonkeyBot;
 import kaptainwutax.monkey.holder.HolderGuild;
 import net.dv8tion.jda.api.entities.Guild;
 
@@ -9,18 +10,15 @@ import java.util.List;
 
 public class Guilds {
 
-    private static Guilds INSTANCE;
-
-    public List<HolderGuild> SERVERS = new ArrayList<HolderGuild>();
+    public List<HolderGuild> servers = new ArrayList<HolderGuild>();
 
     public static Guilds instance() {
-        if(INSTANCE == null) INSTANCE = new Guilds();
-        return INSTANCE;
+        return MonkeyBot.instance().config.guilds;
     }
 
-    public HolderGuild registerServer(HolderGuild server) {
+    public HolderGuild getOrCreateServer(HolderGuild server) {
         if(!this.isServerRegistered(server)) {
-            this.SERVERS.add(server);
+            this.servers.add(server);
             return server;
         }
 
@@ -29,12 +27,12 @@ public class Guilds {
 
     public void unregisterServer(HolderGuild server) {
         if(this.isServerRegistered(server)) {
-            this.SERVERS.remove(server);
+            this.servers.remove(server);
         }
     }
 
     public boolean isServerRegistered(HolderGuild server) {
-        for(HolderGuild s : this.SERVERS) {
+        for(HolderGuild s : this.servers) {
             if(server.equals(s)) return true;
         }
 
@@ -43,7 +41,7 @@ public class Guilds {
 
     @Nullable
     public HolderGuild getServerFromId(String guildId) {
-        for(HolderGuild server : this.SERVERS) {
+        for(HolderGuild server : this.servers) {
             if(server.getId().equals(guildId)) {
                 return server;
             }

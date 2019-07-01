@@ -4,19 +4,23 @@ import kaptainwutax.monkey.init.Commands;
 import kaptainwutax.monkey.utility.Log;
 import kaptainwutax.monkey.utility.MonkeyConfig;
 import net.dv8tion.jda.api.AccountType;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.events.ShutdownEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 import javax.annotation.Nonnull;
 import javax.security.auth.login.LoginException;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Scanner;
 
 public class MonkeyBot extends ListenerAdapter {
 
     private static MonkeyBot instance;
     public MonkeyConfig config;
+    private JDA jda;
 
     public MonkeyBot() {
     }
@@ -45,9 +49,13 @@ public class MonkeyBot extends ListenerAdapter {
         JDABuilder builder = new JDABuilder(AccountType.BOT);
         builder.setToken(monkeyBot.config.token);
         builder.addEventListeners(instance());
-        builder.build();
+        monkeyBot.jda = builder.build();
 
         Commands.registerCommands();
+    }
+
+    public void shutdown() {
+        jda.shutdown();
     }
 
     @Override
@@ -59,4 +67,12 @@ public class MonkeyBot extends ListenerAdapter {
         }
     }
 
+    @Override
+    public void onShutdown(@Nonnull ShutdownEvent event) {
+        try {
+            MonkeyConfig.saveConfig(config, "config.json");
+        } catch (IOException e) {
+            System.err.println("Failed to save config");
+        }
+    }
 }

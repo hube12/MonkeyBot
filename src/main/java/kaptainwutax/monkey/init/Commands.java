@@ -18,6 +18,8 @@ public class Commands {
 
     public static Command SUMMARY = new CommandSummary(new String[] {"summary"});
 
+    public static Command SHUTDOWN = new CommandShutdown(new String[] {"shutdown"});
+
 
     public static void registerCommand(Command command) {
         if(!COMMANDS.contains(command)) COMMANDS.add(command);
@@ -30,6 +32,7 @@ public class Commands {
         registerCommand(SAY);
         registerCommand(SUMMARY);
         registerCommand(CACTUS);
+        registerCommand(SHUTDOWN);
     }
 
 }

@@ -8,7 +8,7 @@ public class Log {
         channel.sendMessage(message).queue();
     }
 
-    public static void delete(TextChannel channel, long messageId) {
+    public static void delete(TextChannel channel, String messageId) {
         channel.deleteMessageById(messageId).queue();
     }
 
