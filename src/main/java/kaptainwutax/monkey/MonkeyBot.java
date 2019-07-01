@@ -52,10 +52,6 @@ public class MonkeyBot extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
-        if(event.getAuthor().isBot()) {
-            return;
-        }
-
         String messageContent = event.getMessage().getContentRaw();
 
         if(Commands.MONKEY.isCommand(messageContent)) {

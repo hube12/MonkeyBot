@@ -203,7 +203,7 @@ public class CommandSummary extends Command {
                 "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "removeChannel <#channel> ` : Remove a channel from summary.",
                 "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "setDescription <#channel> <message> ` : Sets the description of a channel.",
                 "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "resetDescription <#channel> ` : Resets the description of a channel.",
-                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "calibrateSummaryMessage <#channel> <message_id> ` : If the I go offline, run this command to tell me where the summary message was."
+                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "calibrateSummaryMessage <#channel> <message_id> ` : If I go offline, run this command to tell me where the summary message was."
         };
     }
 
