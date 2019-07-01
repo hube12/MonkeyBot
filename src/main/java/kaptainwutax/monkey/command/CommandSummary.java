@@ -11,8 +11,6 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
-import java.net.CookieManager;
-
 public class CommandSummary extends Command {
 
     public CommandSummary(String[] prefix) {
@@ -36,7 +34,7 @@ public class CommandSummary extends Command {
         } else if(rawCommand.startsWith("resetDescription")) {
             this.resetDescription(message, StrUtils.removeFirstTrim(rawCommand, "resetDescription"), false);
         } else if(rawCommand.startsWith("calibrateSummaryMessage")) {
-            this.calibrateSummaryMessage(message, StrUtils.removeFirstTrim(rawCommand, "calibrateSummaryMessage"));
+            this.calibrateSummaryMessage(message);
         } else {
             return;
         }
@@ -53,39 +51,26 @@ public class CommandSummary extends Command {
     }
 
     public void setSummaryChannel(MessageReceivedEvent message, String channelId) {
-        HolderGuild server = Guilds.instance().registerServer(new HolderGuild(message.getGuild()));
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(message.getGuild()));
 
         removeSummaryChannel(message);
         server.summaryChannel = StrUtils.getChannelId(channelId);
 
-        TextChannel summaryChannel = message.getGuild().getTextChannelById(server.summaryChannel);
-
-        summaryChannel.sendMessage("Couldn't setup the summary channel...").queue(msg -> {
-            server.summaryMessageId = msg.getIdLong();
-            server.updateSummaryMessage(message);
-        });
+        server.createSummaryMessage(message);
     }
 
     public void removeSummaryChannel(MessageReceivedEvent message) {
-        HolderGuild server = Guilds.instance().registerServer(new HolderGuild(message.getGuild()));
-        TextChannel summaryChannel = null;
-        if(server.summaryChannel != null)
-            summaryChannel = message.getGuild().getTextChannelById(server.summaryChannel);
-
-        if(summaryChannel == null || server.summaryMessageId == 0) {
-            return;
-        }
-
-        Log.delete(summaryChannel, server.summaryMessageId);
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(message.getGuild()));
+        server.deleteSummaryMessage(message);
         server.summaryChannel = null;
-        server.summaryMessageId = 0;
+        server.summaryMessageIds = new String[0];
     }
 
     public void addChannel(MessageReceivedEvent message, String channelId, boolean caching) {
-        HolderGuild server = Guilds.instance().registerServer(new HolderGuild(message.getGuild()));
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(message.getGuild()));
 
         if(channelId.equals("ALL_CHANNELS")) {
-            for(TextChannel channel : server.guild.getTextChannels()) {
+            for(TextChannel channel : message.getGuild().getTextChannels()) {
                 this.addChannel(message, channel.getId(), true);
             }
 
@@ -107,10 +92,10 @@ public class CommandSummary extends Command {
     }
 
     public void removeChannel(MessageReceivedEvent message, String channelId, boolean caching) {
-        HolderGuild server = Guilds.instance().registerServer(new HolderGuild(message.getGuild()));
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(message.getGuild()));
 
         if(channelId.equals("ALL_CHANNELS")) {
-            for(TextChannel channel : server.guild.getTextChannels()) {
+            for(TextChannel channel : message.getGuild().getTextChannels()) {
                 this.removeChannel(message, channel.getId(), true);
             }
 
@@ -125,7 +110,7 @@ public class CommandSummary extends Command {
     }
 
     public void setDescription(MessageReceivedEvent message, String params, boolean caching) {
-        HolderGuild server = Guilds.instance().registerServer(new HolderGuild(message.getGuild()));
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(message.getGuild()));
 
         params = params.trim();
         String channelId = params.split(" ")[0];
@@ -141,11 +126,13 @@ public class CommandSummary extends Command {
     }
 
     public void resetDescription(MessageReceivedEvent message, String channelId, boolean caching) {
-        HolderGuild server = Guilds.instance().registerServer(new HolderGuild(message.getGuild()));
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(message.getGuild()));
 
         for(HolderChannel channel : server.channels) {
             if(channel.getIdAsMessage().equals(channelId)) {
-                channel.resetDescription();
+                TextChannel channelObj = message.getGuild().getTextChannelById(channelId);
+                if (channelObj != null)
+                    channel.setDescription(channelObj.getTopic());
             }
         }
 
@@ -153,46 +140,9 @@ public class CommandSummary extends Command {
     }
 
 
-    private void calibrateSummaryMessage(MessageReceivedEvent message, String params) {
-        HolderGuild server = Guilds.instance().registerServer(new HolderGuild(message.getGuild()));
-
-        String channelId = params.split(" ")[0];
-        String messageId = StrUtils.removeFirstTrim(params, channelId);
-        channelId = StrUtils.getChannelId(channelId);
-
-        TextChannel channel = server.guild.getTextChannelById(channelId);
-
-        if(channel == null) {
-            Log.print(message.getTextChannel(), "The channel specified doesn't exist.");
-            return;
-        }
-
-        server.summaryChannel = channelId;
-        server.summaryMessageId = Long.parseLong(messageId);
-
-        final String[] summaryMessage = {"Couldn't fetch."};
-
-        channel.retrieveMessageById(server.summaryMessageId).queue(message1 -> {
-            summaryMessage[0] = message1.getContentRaw();
-            summaryMessage[0] = StrUtils.removeFirstTrim(summaryMessage[0], "Channel Summaries :");
-
-            server.channels.clear();
-            String[] entries = summaryMessage[0].split("\n");
-
-            for(String entry : entries) {
-                String[] summaryMessageParams = entry.trim().split(":");
-
-                try {
-                    this.addChannel(message, summaryMessageParams[0].trim(), true);
-                    this.setDescription(message, summaryMessageParams[0].trim() + " " + summaryMessageParams[1].trim(), true);
-                } catch(Exception e) {
-                    //Description is empty.
-                    this.setDescription(message, " ", true);
-                }
-            }
-
-            server.updateSummaryMessage(message);
-        });
+    private void calibrateSummaryMessage(MessageReceivedEvent message) {
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(message.getGuild()));
+        server.updateSummaryMessage(message);
     }
 
     @Override
@@ -203,7 +153,7 @@ public class CommandSummary extends Command {
                 "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "removeChannel <#channel> ` : Remove a channel from summary.",
                 "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "setDescription <#channel> <message> ` : Sets the description of a channel.",
                 "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "resetDescription <#channel> ` : Resets the description of a channel.",
-                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "calibrateSummaryMessage <#channel> <message_id> ` : If I go offline, run this command to tell me where the summary message was."
+                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "calibrateSummaryMessage` : If I go offline, run this command to refresh the summary message."
         };
     }
 

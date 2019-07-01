@@ -5,18 +5,12 @@ import net.dv8tion.jda.api.entities.TextChannel;
 
 public class HolderChannel {
 
-    private TextChannel channel;
     private String id;
     private String description;
 
     public HolderChannel(TextChannel channel) {
-        this.channel = channel;
         this.id = channel.getId();
-        this.resetDescription();
-    }
-
-    public TextChannel getChannel() {
-        return this.channel;
+        this.description = channel.getTopic();
     }
 
     public String getId() {
@@ -33,10 +27,6 @@ public class HolderChannel {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public void resetDescription() {
-        this.description = this.channel.getTopic();
     }
 
     @Override
