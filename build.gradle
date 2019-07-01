@@ -1,6 +1,5 @@
 plugins {
     id 'java'
-    id "com.github.johnrengelman.shadow" version "4.0.0"
 }
 
 group 'kaptainwutax'
@@ -18,19 +17,3 @@ dependencies {
     compile 'com.google.code.gson:gson:2.8.5'
 }
 
-jar {
-    manifest {
-        attributes(
-            'Main-Class': 'kaptainwutax.monkey.MonkeyBot'
-        )
-    }
-}
-
-shadowJar {
-    baseName = 'monkey'
-    classifier = null
-    version = null
-}
-
-task stage(dependsOn: ['build', 'clean', 'shadowJar']) {
-}

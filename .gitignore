@@ -1,15 +1,10 @@
-
 *.bin
 *.lock
 *.xml
 .idea/.name
 /out/
-build/classes/
-build/tmp/
+build/
 config.json
-
 \.gradle/vcs-1/
-
 \.gradle/4\.10/
-
 \.gradle/buildOutputCleanup/

@@ -3,6 +3,7 @@ package kaptainwutax.monkey.command;
 import kaptainwutax.monkey.holder.HolderChannel;
 import kaptainwutax.monkey.holder.HolderGuild;
 import kaptainwutax.monkey.init.Channels;
+import kaptainwutax.monkey.init.Commands;
 import kaptainwutax.monkey.init.Guilds;
 import kaptainwutax.monkey.utility.Log;
 import kaptainwutax.monkey.utility.StrUtils;
@@ -10,9 +11,11 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
+import java.net.CookieManager;
+
 public class CommandSummary extends Command {
 
-    public CommandSummary(String prefix) {
+    public CommandSummary(String[] prefix) {
         super(prefix);
     }
 
@@ -20,7 +23,7 @@ public class CommandSummary extends Command {
     public void processCommand(MessageReceivedEvent message, String rawCommand) {
         rawCommand = this.removePrefix(rawCommand);
 
-        if(!message.getMember().hasPermission(Permission.ADMINISTRATOR)) return;
+        if(!message.getMember().hasPermission(Permission.ADMINISTRATOR))return;
 
         if(rawCommand.startsWith("setSummaryChannel")) {
             this.setSummaryChannel(message, StrUtils.removeFirstTrim(rawCommand, "setSummaryChannel"));
@@ -190,6 +193,18 @@ public class CommandSummary extends Command {
 
             server.updateSummaryMessage(message);
         });
+    }
+
+    @Override
+    public String[] getCommandDesc() {
+        return new String[] {
+                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "setSummaryChannel <#channel> ` : Sets the summary channel.",
+                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "addChannel <#channel> ` : Add a channel to summary.",
+                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "removeChannel <#channel> ` : Remove a channel from summary.",
+                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "setDescription <#channel> <message> ` : Sets the description of a channel.",
+                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "resetDescription <#channel> ` : Resets the description of a channel.",
+                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "calibrateSummaryMessage <#channel> <message_id> ` : If the I go offline, run this command to tell me where the summary message was."
+        };
     }
 
 }

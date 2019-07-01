@@ -5,7 +5,7 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 public class CommandMonkey extends Command {
 
-    public CommandMonkey(String prefix) {
+    public CommandMonkey(String[] prefix) {
         super(prefix);
     }
 
@@ -19,6 +19,13 @@ public class CommandMonkey extends Command {
                 return;
             }
         }
+    }
+
+    @Override
+    public String[] getCommandDesc() {
+        return new String[] {
+                "`" + Commands.MONKEY.getPrefixDesc() + "` : Yes, that's my name."
+        };
     }
 
 }
