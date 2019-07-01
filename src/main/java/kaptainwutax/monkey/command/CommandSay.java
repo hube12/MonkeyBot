@@ -1,6 +1,7 @@
 package kaptainwutax.monkey.command;
 
 import kaptainwutax.monkey.init.Commands;
+import kaptainwutax.monkey.utility.Log;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 public class CommandSay extends Command {
@@ -16,7 +17,7 @@ public class CommandSay extends Command {
         String finalRawCommand = rawCommand;
 
         message.getChannel().sendMessage(" ").queue((placeholder) -> {
-            placeholder.getChannel().sendMessage(finalRawCommand).queue();
+            Log.edit(placeholder.getTextChannel(), placeholder.getIdLong(), finalRawCommand);
         });
     }
 
