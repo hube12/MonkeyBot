@@ -2,9 +2,12 @@ package kaptainwutax.monkey.init;
 
 import kaptainwutax.monkey.MonkeyBot;
 import kaptainwutax.monkey.holder.HolderGuild;
+import kaptainwutax.monkey.utility.Log;
+import kaptainwutax.monkey.utility.MessageLimiter;
 import net.dv8tion.jda.api.entities.Guild;
 
 import javax.annotation.Nullable;
+import javax.xml.ws.Holder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +20,7 @@ public class Guilds {
     }
 
     public HolderGuild getOrCreateServer(HolderGuild server) {
+        System.out.println(servers.size());
         if(!this.isServerRegistered(server)) {
             this.servers.add(server);
             return server;
@@ -33,7 +37,7 @@ public class Guilds {
 
     public boolean isServerRegistered(HolderGuild server) {
         for(HolderGuild s : this.servers) {
-            if(server.equals(s)) return true;
+            if(server.equals(s))return true;
         }
 
         return false;

@@ -51,7 +51,7 @@ public class CommandSummary extends Command {
     public void setSummaryChannel(MessageReceivedEvent message, String channelId) {
         HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(message.getGuild()));
 
-        removeSummaryChannel(message);
+        if(server.summaryChannel != null)removeSummaryChannel(message);
         server.summaryChannel = StrUtils.getChannelId(channelId);
 
         server.createSummaryMessage(message);

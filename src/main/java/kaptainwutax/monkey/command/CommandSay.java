@@ -16,6 +16,8 @@ public class CommandSay extends Command {
 
         String finalRawCommand = rawCommand;
 
+        if(finalRawCommand == null || finalRawCommand.isEmpty())return;
+
         message.getChannel().sendMessage("stop abusing me").queue((placeholder) -> {
             Log.edit(placeholder.getTextChannel(), placeholder.getIdLong(), finalRawCommand);
         });

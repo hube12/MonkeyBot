@@ -1,6 +1,7 @@
 package kaptainwutax.monkey.holder;
 
 import kaptainwutax.monkey.utility.Log;
+import kaptainwutax.monkey.utility.MessageLimiter;
 import kaptainwutax.monkey.utility.StrUtils;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.TextChannel;
@@ -12,14 +13,19 @@ import java.util.List;
 public final class HolderGuild {
 
     public String id;
+    public transient Guild guild;
     public List<HolderChannel> channels = new ArrayList<>();
     public String summaryChannel = null;
     public String[] summaryMessageIds = new String[0];
+
+    public HolderController controller;
 
     private HolderGuild() {} // serialization
 
     public HolderGuild(Guild guild) {
         this.id = guild.getId();
+        this.guild = guild;
+        this.controller = new HolderController(this);
     }
 
     public boolean deleteSummaryMessage(MessageReceivedEvent commandMessage) {

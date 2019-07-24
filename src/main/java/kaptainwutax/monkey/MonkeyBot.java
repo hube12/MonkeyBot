@@ -1,11 +1,15 @@
 package kaptainwutax.monkey;
 
+import kaptainwutax.monkey.holder.HolderGuild;
 import kaptainwutax.monkey.init.Commands;
+import kaptainwutax.monkey.init.Guilds;
 import kaptainwutax.monkey.utility.Log;
 import kaptainwutax.monkey.utility.MonkeyConfig;
+import kaptainwutax.monkey.utility.StrUtils;
 import net.dv8tion.jda.api.AccountType;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.ShutdownEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -20,9 +24,16 @@ public class MonkeyBot extends ListenerAdapter {
 
     private static MonkeyBot instance;
     public MonkeyConfig config;
-    private JDA jda;
+    public JDA jda;
 
     public MonkeyBot() {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                MonkeyConfig.saveConfig(this.config, "config.json");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }));
     }
 
     public static MonkeyBot instance() {
@@ -46,12 +57,32 @@ public class MonkeyBot extends ListenerAdapter {
             }
         }
 
+        new Thread(() -> {
+            while(true) {
+                try {
+                    MonkeyConfig.saveConfig(monkeyBot.config, "config.json");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                try {
+                    Thread.sleep(10000L);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+
         JDABuilder builder = new JDABuilder(AccountType.BOT);
         builder.setToken(monkeyBot.config.token);
         builder.addEventListeners(instance());
         monkeyBot.jda = builder.build();
 
         Commands.registerCommands();
+
+        for(Guild guild: monkeyBot.jda.getGuilds()) {
+            Guilds.instance().getOrCreateServer(new HolderGuild(guild));
+        }
     }
 
     public void shutdown() {
@@ -61,6 +92,11 @@ public class MonkeyBot extends ListenerAdapter {
     @Override
     public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
         String messageContent = event.getMessage().getContentRaw();
+
+        if(event.getMember().getIdLong() != 572817483489214475L) {
+            HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(event.getGuild()));
+            server.controller.sanitize(event);
+        }
 
         if(Commands.MONKEY.isCommand(messageContent)) {
             Commands.MONKEY.processCommand(event, messageContent);
@@ -72,7 +108,7 @@ public class MonkeyBot extends ListenerAdapter {
         try {
             MonkeyConfig.saveConfig(config, "config.json");
         } catch (IOException e) {
-            System.err.println("Failed to save config");
+            System.err.println("Failed to save config.");
         }
     }
 }

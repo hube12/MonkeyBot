@@ -16,14 +16,14 @@ public class CommandShutdown extends Command {
             Log.print(message.getTextChannel(), "Shutting down...");
             MonkeyBot.instance().shutdown();
         } else {
-            Log.print(message.getTextChannel(), "No permission");
+            Log.print(message.getTextChannel(), "No u. Go get permission.");
         }
     }
 
     @Override
     public String[] getCommandDesc() {
         return new String[] {
-                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "`: Shut down the bot (admin only)"
+                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "`: Shuts down the global bot instance. (BOT ADMIN ONLY)"
         };
     }
 }
