@@ -1,5 +1,6 @@
 package kaptainwutax.monkey.init;
 
+import com.google.gson.annotations.Expose;
 import kaptainwutax.monkey.MonkeyBot;
 import kaptainwutax.monkey.holder.HolderGuild;
 import kaptainwutax.monkey.utility.Log;
@@ -13,6 +14,7 @@ import java.util.List;
 
 public class Guilds {
 
+    @Expose
     public List<HolderGuild> servers = new ArrayList<HolderGuild>();
 
     public static Guilds instance() {
@@ -20,12 +22,12 @@ public class Guilds {
     }
 
     public HolderGuild getOrCreateServer(HolderGuild server) {
-        System.out.println(servers.size());
+        System.out.println("Old size " + servers.size());
         if(!this.isServerRegistered(server)) {
             this.servers.add(server);
             return server;
         }
-
+        System.out.println("New size " + servers.size());
         return this.getServerFromId(server.getId());
     }
 

@@ -1,5 +1,6 @@
 package kaptainwutax.monkey.holder;
 
+import com.google.gson.annotations.Expose;
 import kaptainwutax.monkey.init.Guilds;
 import kaptainwutax.monkey.utility.Log;
 import kaptainwutax.monkey.utility.MessageLimiter;
@@ -14,12 +15,12 @@ import java.util.List;
 
 public class HolderController {
 
-    private HolderGuild server;
-    public String moderationChannel = null;
-    public boolean autoban = false;
+    public HolderGuild server;
+    @Expose public String moderationChannel = null;
+    @Expose public boolean autoban = false;
 
-    private MessageLimiter NOOB_LIMIT = new MessageLimiter(0, 0, 0,0);
-    private List<RoleMap> LIMITS = new ArrayList<RoleMap>();
+    @Expose private MessageLimiter NOOB_LIMIT = new MessageLimiter(0, 0, 0,0);
+    @Expose private List<RoleMap> LIMITS = new ArrayList<RoleMap>();
 
     public HolderController(HolderGuild server) {
         this.server = server;
@@ -32,7 +33,7 @@ public class HolderController {
 
         for(HolderGuild s: Guilds.instance().servers) {
             if(!s.equals(this.server) && s.controller.moderationChannel != null) {
-                TextChannel moderationChannel = s.guild.getTextChannelById(this.moderationChannel);
+                TextChannel moderationChannel = s.guild.getTextChannelById(StrUtils.getChannelId(s.controller.moderationChannel));
                 Log.print(moderationChannel, "Spam alert from **" + event.getGuild().getName() + "**. User <@" + event.getMember().getIdLong() + "> has been spamming pings.");
 
                 if(s.controller.autoban) {

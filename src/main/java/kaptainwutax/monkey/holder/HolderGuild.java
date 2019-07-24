@@ -1,5 +1,7 @@
 package kaptainwutax.monkey.holder;
 
+import com.google.gson.annotations.Expose;
+import kaptainwutax.monkey.init.Guilds;
 import kaptainwutax.monkey.utility.Log;
 import kaptainwutax.monkey.utility.MessageLimiter;
 import kaptainwutax.monkey.utility.StrUtils;
@@ -12,15 +14,13 @@ import java.util.List;
 
 public final class HolderGuild {
 
-    public String id;
-    public transient Guild guild;
-    public List<HolderChannel> channels = new ArrayList<>();
-    public String summaryChannel = null;
-    public String[] summaryMessageIds = new String[0];
+    public Guild guild;
+    @Expose public String id;
+    @Expose public List<HolderChannel> channels = new ArrayList<>();
+    @Expose public String summaryChannel = null;
+    @Expose public String[] summaryMessageIds = new String[0];
 
-    public HolderController controller;
-
-    private HolderGuild() {} // serialization
+    @Expose public HolderController controller;
 
     public HolderGuild(Guild guild) {
         this.id = guild.getId();
