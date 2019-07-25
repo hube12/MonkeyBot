@@ -1,11 +1,13 @@
 package kaptainwutax.monkey.utility;
 
+import com.google.gson.annotations.Expose;
+
 public class MessageLimiter {
 
-    public int everyone;
-    public int here;
-    public int role;
-    public int user;
+    @Expose public int everyone;
+    @Expose public int here;
+    @Expose public int role;
+    @Expose public int user;
 
     public MessageLimiter(int everyone, int here, int role, int user) {
         this.everyone = everyone;
@@ -22,10 +24,10 @@ public class MessageLimiter {
     }
 
     public boolean respectsLimits(MessageLimiter limiter) {
-        if(this.everyone > limiter.everyone)return false;
-        else if(this.here > limiter.here)return false;
-        else if(this.role > limiter.role)return false;
-        else if(this.user > limiter.user)return false;
+        if(limiter.everyone >= 0 && this.everyone > limiter.everyone)return false;
+        else if(limiter.here >= 0 && this.here > limiter.here)return false;
+        else if(limiter.role >= 0 && this.role > limiter.role)return false;
+        else if(limiter.user >= 0 && this.user > limiter.user)return false;
 
         return true;
     }

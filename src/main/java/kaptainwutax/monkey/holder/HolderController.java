@@ -19,11 +19,16 @@ public class HolderController {
     @Expose public String moderationChannel = null;
     @Expose public boolean autoban = false;
 
-    @Expose private MessageLimiter NOOB_LIMIT = new MessageLimiter(0, 0, 0,0);
-    @Expose private List<RoleMap> LIMITS = new ArrayList<RoleMap>();
+    @Expose public MessageLimiter NOOB_LIMIT = new MessageLimiter(-1, -1, -1,-1);
+    @Expose public List<RoleMap> LIMITS = new ArrayList<RoleMap>();
 
     public HolderController(HolderGuild server) {
         this.server = server;
+    }
+
+    public void setRole(Role role, int[] limits) {
+
+
     }
 
     public void sanitize(MessageReceivedEvent event) {
@@ -127,8 +132,8 @@ public class HolderController {
 
     private class RoleMap {
 
-        long id;
-        MessageLimiter limiter;
+        @Expose long id;
+        @Expose MessageLimiter limiter = new MessageLimiter(-1, -1, -1, -1);
 
         public RoleMap(long id) {
             this.id = id;
@@ -144,7 +149,6 @@ public class HolderController {
         }
 
         public MessageLimiter getValue() {
-            if(limiter == null)limiter = new MessageLimiter(0, 0, 0, 0);
             return this.limiter;
         }
 

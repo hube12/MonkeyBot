@@ -10,6 +10,7 @@ import net.dv8tion.jda.api.AccountType;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.ShutdownEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -79,8 +80,11 @@ public class MonkeyBot extends ListenerAdapter {
         monkeyBot.jda = builder.build();
 
         Commands.registerCommands();
+    }
 
-        for(Guild guild: monkeyBot.jda.getGuilds()) {
+    @Override
+    public void onReady(@Nonnull ReadyEvent event) {
+        for(Guild guild: instance().jda.getGuildCache().asList()) {
             Guilds.instance().getOrCreateServer(new HolderGuild(guild));
         }
     }

@@ -22,12 +22,12 @@ public class Guilds {
     }
 
     public HolderGuild getOrCreateServer(HolderGuild server) {
-        System.out.println("Old size " + servers.size());
         if(!this.isServerRegistered(server)) {
             this.servers.add(server);
+            System.out.println("Added new server " + server.guild.getName() + ".");
             return server;
         }
-        System.out.println("New size " + servers.size());
+
         return this.getServerFromId(server.getId());
     }
 

@@ -5,8 +5,14 @@ import kaptainwutax.monkey.init.Guilds;
 import kaptainwutax.monkey.utility.Log;
 import kaptainwutax.monkey.utility.StrUtils;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class CommandMod extends Command {
 
@@ -45,7 +51,7 @@ public class CommandMod extends Command {
         HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(message.getGuild()));
 
         if(server.controller.moderationChannel == null) {
-            Log.print(message.getTextChannel(), "This command requires a moderation channel. Use [monkey mod setChannel <#channel>.]");
+            Log.print(message.getTextChannel(), "This command requires a moderation channel. Use [monkey mod setChannel <#channel>].");
         }
 
         TextChannel moderationChannel = message.getGuild().getTextChannelById(StrUtils.getChannelId(server.controller.moderationChannel));
@@ -61,6 +67,31 @@ public class CommandMod extends Command {
         } else {
             Log.print(moderationChannel, "Unknown argument \"" + params + "\".");
         }
+    }
+
+    private void setLimit(MessageReceivedEvent message, String params) {
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(message.getGuild()));
+
+        List<String> rawLimits = Arrays.asList(params.split(" "));
+
+        if(rawLimits.size() != 5) {
+            Log.print(message.getTextChannel(), "Invalid command arguments.");
+            return;
+        }
+
+        String roleId = rawLimits.get(0);
+        rawLimits.remove(0);
+
+        int[] limits = rawLimits.stream().mapToInt(Integer::parseInt).toArray();
+
+        Role role = server.guild.getRoleById(roleId.replaceFirst("<@&", "").replaceFirst(">", ""));
+
+        if(role == null) {
+            Log.print(message.getTextChannel(), "The role you specified is invalid.");
+            return;
+        }
+
+        server.controller.setRole(role, limits);
     }
 
     @Override
