@@ -12,31 +12,40 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class HolderController {
 
+    public static String[] BAN_MESSAGES = new String[] {
+            "user went off with a bang!",
+            "user tried to outrun a train, the train won.",
+            "user disappeared from the universe.",
+            "user died from a creeper explosion.",
+            "user disrespected the tall kaktoos."
+    };
+
     public HolderGuild server;
-    @Expose public String parentId;
+    @Expose private String serverId;
     @Expose public String moderationChannel = null;
     @Expose public boolean autoban = false;
+    @Expose public boolean banMessage = true;
+    @Expose public boolean sendAlert = true;
+    @Expose public boolean funCommands = false;
 
-    @Expose public MessageLimiter noobLimit = new MessageLimiter(-1, -1, -1,-1);
-    @Expose public List<RoleMap> roleLimits = new ArrayList<RoleMap>();
-
-    public HolderController() {
-        for(HolderGuild server: Guilds.instance().servers) {
-            if(server.id.equals(this.parentId)) {
-                this.server = server;
-            }
-        }
-    }
+    @Expose private MessageLimiter noobLimit = new MessageLimiter(-1, -1, -1,-1);
+    @Expose private List<RoleMap> roleLimits = new ArrayList<RoleMap>();
 
     public HolderController(HolderGuild server) {
-        this.parentId = server.id;
         this.server = server;
+        this.serverId = this.server.id;
     }
 
     public void setRole(Role role, int[] limits) {
+        if(role == null) {
+            this.noobLimit = new MessageLimiter(limits);
+            return;
+        }
+
         for(RoleMap roleMap: this.roleLimits) {
             if(roleMap.getId() == role.getIdLong()) {
                 roleMap.setValue(new MessageLimiter(limits));
@@ -51,26 +60,28 @@ public class HolderController {
         if(this.moderationChannel == null || !this.isConsideredSpam(event))return;
 
         this.attemptBan(event, false);
+        if(!this.sendAlert)return;
 
         for(HolderGuild s: Guilds.instance().servers) {
-            if(!s.equals(this.server) && s.controller.moderationChannel != null) {
+            if(!s.equals(this.getServer()) && s.controller.moderationChannel != null && s.controller.sendAlert) {
                 TextChannel moderationChannel = s.getGuild().getTextChannelById(StrUtils.getChannelId(s.controller.moderationChannel));
                 Log.print(moderationChannel, "Spam alert from **" + event.getGuild().getName() + "**. User <@" + event.getMember().getIdLong() + "> has been spamming pings.");
 
                 if(s.controller.autoban) {
                     Log.print(moderationChannel, "Banned <@" + event.getMember().getIdLong() + ">, please double check to make sure it wasn't a mistake.");
-                    server.getGuild().getController().ban(event.getMember(), 0, "Automatic ping ban from " + event.getGuild().getName() + ".");
+                    this.getServer().getGuild().getController().ban(event.getMember(), 0, "Automatic ping ban from " + event.getGuild().getName() + ".").queue();
                 }
             }
         }
     }
 
     private void attemptBan(MessageReceivedEvent event, boolean force) {
-        TextChannel moderationChannel = this.server.getGuild().getTextChannelById(StrUtils.getChannelId(this.moderationChannel));
+        TextChannel moderationChannel = this.getServer().getGuild().getTextChannelById(StrUtils.getChannelId(this.moderationChannel));
         Log.print(moderationChannel, "Member <@" + event.getMember().getIdLong() + "> is spamming pings in " + StrUtils.getChannelIdAsMessage(event.getChannel().getId()) + ".");
         if(!force && !this.autoban)return;
+        if(this.banMessage)Log.print(event.getTextChannel(), BAN_MESSAGES[new Random().nextInt(BAN_MESSAGES.length)].replaceFirst("user", "<@" + event.getMember().getId() + ">"));
         Log.print(moderationChannel, "Banned <@" + event.getMember().getIdLong() + ">, please double check to make sure it wasn't a mistake.");
-        server.getGuild().getController().ban(event.getMember(), 1, "Automatic ping ban.");
+        this.getServer().getGuild().getController().ban(event.getMember(), 0, "Automatic ping ban.").queue();
     }
 
     public boolean isConsideredSpam(MessageReceivedEvent event) {
@@ -144,6 +155,19 @@ public class HolderController {
         }
 
         return count;
+    }
+
+    private HolderGuild getServer() {
+        if(this.server == null) {
+            for(HolderGuild server: Guilds.instance().servers) {
+                if(server.id.equals(this.serverId)) {
+                    this.server = server;
+                    break;
+                }
+            }
+        }
+
+        return this.server;
     }
 
     private class RoleMap {

@@ -1,8 +1,11 @@
 package kaptainwutax.monkey.command;
 
+import kaptainwutax.monkey.holder.HolderGuild;
 import kaptainwutax.monkey.init.Commands;
+import kaptainwutax.monkey.init.Guilds;
 import kaptainwutax.monkey.utility.CactusSimulation;
 import kaptainwutax.monkey.utility.MathHelper;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 public class CommandCactus extends Command {
@@ -15,6 +18,9 @@ public class CommandCactus extends Command {
 
     @Override
     public void processCommand(MessageReceivedEvent message, String rawCommand) {
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(message.getGuild()));
+        if(!server.controller.funCommands && !message.getMember().hasPermission(Permission.ADMINISTRATOR))return;
+
         rawCommand = this.removePrefix(rawCommand);
 
         long seed;

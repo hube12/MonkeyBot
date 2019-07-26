@@ -21,7 +21,6 @@ public class Commands {
 
     public static Command SHUTDOWN = new CommandShutdown(new String[] {"shutdown"});
 
-
     public static void registerCommand(Command command) {
         if(!COMMANDS.contains(command)) COMMANDS.add(command);
     }
