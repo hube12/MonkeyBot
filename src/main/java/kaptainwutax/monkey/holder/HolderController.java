@@ -16,19 +16,35 @@ import java.util.List;
 public class HolderController {
 
     public HolderGuild server;
+    @Expose public String parentId;
     @Expose public String moderationChannel = null;
     @Expose public boolean autoban = false;
 
-    @Expose public MessageLimiter NOOB_LIMIT = new MessageLimiter(-1, -1, -1,-1);
-    @Expose public List<RoleMap> LIMITS = new ArrayList<RoleMap>();
+    @Expose public MessageLimiter noobLimit = new MessageLimiter(-1, -1, -1,-1);
+    @Expose public List<RoleMap> roleLimits = new ArrayList<RoleMap>();
+
+    public HolderController() {
+        for(HolderGuild server: Guilds.instance().servers) {
+            if(server.id.equals(this.parentId)) {
+                this.server = server;
+            }
+        }
+    }
 
     public HolderController(HolderGuild server) {
+        this.parentId = server.id;
         this.server = server;
     }
 
     public void setRole(Role role, int[] limits) {
+        for(RoleMap roleMap: this.roleLimits) {
+            if(roleMap.getId() == role.getIdLong()) {
+                roleMap.setValue(new MessageLimiter(limits));
+                return;
+            }
+        }
 
-
+        this.roleLimits.add(new RoleMap(role.getIdLong()).setValue(new MessageLimiter(limits)));
     }
 
     public void sanitize(MessageReceivedEvent event) {
@@ -38,23 +54,23 @@ public class HolderController {
 
         for(HolderGuild s: Guilds.instance().servers) {
             if(!s.equals(this.server) && s.controller.moderationChannel != null) {
-                TextChannel moderationChannel = s.guild.getTextChannelById(StrUtils.getChannelId(s.controller.moderationChannel));
+                TextChannel moderationChannel = s.getGuild().getTextChannelById(StrUtils.getChannelId(s.controller.moderationChannel));
                 Log.print(moderationChannel, "Spam alert from **" + event.getGuild().getName() + "**. User <@" + event.getMember().getIdLong() + "> has been spamming pings.");
 
                 if(s.controller.autoban) {
                     Log.print(moderationChannel, "Banned <@" + event.getMember().getIdLong() + ">, please double check to make sure it wasn't a mistake.");
-                    //server.guild.getController().ban(event.getMember(), 0, "Automatic ping ban from " + event.getGuild().getName() + ".");
+                    server.getGuild().getController().ban(event.getMember(), 0, "Automatic ping ban from " + event.getGuild().getName() + ".");
                 }
             }
         }
     }
 
     private void attemptBan(MessageReceivedEvent event, boolean force) {
-        TextChannel moderationChannel = this.server.guild.getTextChannelById(StrUtils.getChannelId(this.moderationChannel));
+        TextChannel moderationChannel = this.server.getGuild().getTextChannelById(StrUtils.getChannelId(this.moderationChannel));
         Log.print(moderationChannel, "Member <@" + event.getMember().getIdLong() + "> is spamming pings in " + StrUtils.getChannelIdAsMessage(event.getChannel().getId()) + ".");
         if(!force && !this.autoban)return;
         Log.print(moderationChannel, "Banned <@" + event.getMember().getIdLong() + ">, please double check to make sure it wasn't a mistake.");
-        //server.guild.getController().ban(event.getMember(), 0, "Automatic ping ban.");
+        server.getGuild().getController().ban(event.getMember(), 1, "Automatic ping ban.");
     }
 
     public boolean isConsideredSpam(MessageReceivedEvent event) {
@@ -66,16 +82,16 @@ public class HolderController {
         List<Role> roles = member.getRoles();
 
         if(roles.isEmpty()) {
-            return this.NOOB_LIMIT;
+            return this.noobLimit;
         } else {
             Role role = roles.get(0);
 
-            for(RoleMap roleMap: LIMITS) {
+            for(RoleMap roleMap: roleLimits) {
                 if(roleMap.id == role.getIdLong())return roleMap.getValue();
             }
 
             RoleMap roleMap1 = new RoleMap(role.getIdLong());
-            LIMITS.add(roleMap1);
+            roleLimits.add(roleMap1);
             return roleMap1.getValue();
         }
     }

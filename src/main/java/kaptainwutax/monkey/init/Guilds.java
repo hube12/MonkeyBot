@@ -24,7 +24,7 @@ public class Guilds {
     public HolderGuild getOrCreateServer(HolderGuild server) {
         if(!this.isServerRegistered(server)) {
             this.servers.add(server);
-            System.out.println("Added new server " + server.guild.getName() + ".");
+            System.out.println("Added new server " + server.getGuild().getName() + ".");
             return server;
         }
 

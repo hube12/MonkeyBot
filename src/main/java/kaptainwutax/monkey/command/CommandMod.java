@@ -30,6 +30,8 @@ public class CommandMod extends Command {
             this.setChannel(message, StrUtils.removeFirstTrim(rawCommand, "setChannel"));
         } else if(rawCommand.startsWith("autoban")) {
             this.setAutoban(message, StrUtils.removeFirstTrim(rawCommand, "autoban"));
+        } else if(rawCommand.startsWith("limit")) {
+            this.setLimit(message, StrUtils.removeFirstTrim(rawCommand, "limit"));
         }
     }
 
@@ -50,7 +52,7 @@ public class CommandMod extends Command {
     private void setAutoban(MessageReceivedEvent message, String params) {
         HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(message.getGuild()));
 
-        if(server.controller.moderationChannel == null) {
+        if(server.controller.moderationChannel == null || server.controller.moderationChannel.isEmpty()) {
             Log.print(message.getTextChannel(), "This command requires a moderation channel. Use [monkey mod setChannel <#channel>].");
         }
 
@@ -80,11 +82,10 @@ public class CommandMod extends Command {
         }
 
         String roleId = rawLimits.get(0);
-        rawLimits.remove(0);
 
-        int[] limits = rawLimits.stream().mapToInt(Integer::parseInt).toArray();
+        int[] limits = rawLimits.subList(1, rawLimits.size()).stream().mapToInt(Integer::parseInt).toArray();
 
-        Role role = server.guild.getRoleById(roleId.replaceFirst("<@&", "").replaceFirst(">", ""));
+        Role role = server.getGuild().getRoleById(roleId.replaceFirst("<@&", "").replaceFirst(">", ""));
 
         if(role == null) {
             Log.print(message.getTextChannel(), "The role you specified is invalid.");
@@ -92,6 +93,7 @@ public class CommandMod extends Command {
         }
 
         server.controller.setRole(role, limits);
+        Log.print(message.getTextChannel(), "Done.");
     }
 
     @Override

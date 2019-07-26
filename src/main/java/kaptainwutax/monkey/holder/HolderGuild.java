@@ -1,6 +1,7 @@
 package kaptainwutax.monkey.holder;
 
 import com.google.gson.annotations.Expose;
+import kaptainwutax.monkey.MonkeyBot;
 import kaptainwutax.monkey.init.Guilds;
 import kaptainwutax.monkey.utility.Log;
 import kaptainwutax.monkey.utility.MessageLimiter;
@@ -14,7 +15,7 @@ import java.util.List;
 
 public final class HolderGuild {
 
-    public Guild guild;
+    private Guild guild;
     @Expose public String id;
     @Expose public List<HolderChannel> channels = new ArrayList<>();
     @Expose public String summaryChannel = null;
@@ -22,10 +23,19 @@ public final class HolderGuild {
 
     @Expose public HolderController controller;
 
+    public HolderGuild() {
+        //Serialization.
+    }
+
     public HolderGuild(Guild guild) {
         this.id = guild.getId();
         this.guild = guild;
         this.controller = new HolderController(this);
+    }
+
+    public Guild getGuild() {
+        if(this.guild == null)this.guild = MonkeyBot.instance().jda.getGuildById(this.id);
+        return this.guild;
     }
 
     public boolean deleteSummaryMessage(MessageReceivedEvent commandMessage) {
