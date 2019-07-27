@@ -58,6 +58,8 @@ public class MonkeyBot extends ListenerAdapter {
             }
         }
 
+        // TODO: Threadsafe autosaves
+        /*
         new Thread(() -> {
             while(true) {
                 try {
@@ -73,6 +75,7 @@ public class MonkeyBot extends ListenerAdapter {
                 }
             }
         }).start();
+        */
 
         JDABuilder builder = new JDABuilder(AccountType.BOT);
         builder.setToken(monkeyBot.config.token);
