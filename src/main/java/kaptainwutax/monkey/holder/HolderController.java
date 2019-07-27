@@ -137,7 +137,7 @@ public class HolderController {
                 if(start == -1) {
                     start = i;
                 } else {
-                    finalText = StrUtils.removeFirst(finalText, s.substring(start, i + brackets.length()));
+                    finalText = finalText.replace(s.substring(start, i + brackets.length()), "");
                     start = -1;
                 }
             }
