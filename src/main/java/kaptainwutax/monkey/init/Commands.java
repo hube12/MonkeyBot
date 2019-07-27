@@ -16,6 +16,7 @@ public class Commands {
     public static Command SAY = new CommandSay(new String[] {"say"});
     public static Command CACTUS = new CommandCactus(new String[] {"cactus"});
     public static Command STRONGHOLD = new CommandStronghold(new String[] {"stronghold"});
+    public static Command LCG = new CommandLcg(new String[] {"lcg"});
 
     public static Command SUMMARY = new CommandSummary(new String[] {"summary"});
     public static Command MOD = new CommandMod(new String[] {"mod"});
@@ -33,6 +34,7 @@ public class Commands {
         registerCommand(SAY);
         registerCommand(CACTUS);
         registerCommand(STRONGHOLD);
+        registerCommand(LCG);
         registerCommand(SUMMARY);
         registerCommand(MOD);
         registerCommand(SHUTDOWN);
