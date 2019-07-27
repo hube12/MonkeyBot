@@ -3,6 +3,7 @@ package kaptainwutax.monkey.command;
 import kaptainwutax.monkey.holder.HolderGuild;
 import kaptainwutax.monkey.init.Commands;
 import kaptainwutax.monkey.init.Guilds;
+import kaptainwutax.monkey.utility.StrUtils;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
@@ -29,7 +30,9 @@ public class CommandHelp extends Command {
             }
         }
 
-        message.getTextChannel().sendMessage(helpMessage.toString()).queue();
+        for (String submsg : StrUtils.splitMessage(helpMessage.toString())) {
+            message.getTextChannel().sendMessage(submsg).queue();
+        }
     }
 
     @Override
