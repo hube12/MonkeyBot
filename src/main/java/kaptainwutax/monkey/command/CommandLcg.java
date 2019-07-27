@@ -96,23 +96,37 @@ public class CommandLcg extends Command {
     }
 
     private static LCG combine(long n) {
+        /*
+         * This works by splitting n into sums of powers of 2, and combining those power of 2 LCGs.
+         * An LCG (a1, b1) can be combined with an LCG (a2, b2) to make an LCG (a3, b3) by:
+         * s' = a2 * (a1 * s + b1) + b2 = (a1 * a2) * s + (a2 * b1 + b2), hence
+         * a3 = a1 * a2
+         * b3 = a2 * b1 + b2
+         */
+
+        // Start with the identity LCG
         long multiplier = 1;
         long addend = 0;
 
-        long a = MULTIPLIER;
+        // The LCG to combine with at the current step
+        long intermediateMultiplier = MULTIPLIER;
+        long intermediateAddend = ADDEND;
+
+        // for each bit from right to left
         for (long k = n; k != 0; k >>>= 1) {
-            addend *= a + 1;
-            if ((k & 1) != 0) {
-                multiplier *= a;
-                addend = addend * MULTIPLIER + 1;
+            if ((k & 1) != 0) { // if the bit is 1
+                // combine the current LCG with the intermediate LCG
+                multiplier *= intermediateMultiplier;
+                addend = intermediateMultiplier * addend + intermediateAddend;
             }
-            a *= a;
+
+            // combine the intermediate multiplier with itself
+            intermediateAddend = (intermediateMultiplier + 1) * intermediateAddend;
+            intermediateMultiplier *= intermediateMultiplier;
         }
-        addend *= ADDEND;
 
         multiplier &= MASK;
         addend &= MASK;
-
         return new LCG(multiplier, addend);
     }
 
