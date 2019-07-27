@@ -40,24 +40,28 @@ public class CommandLcg extends Command {
                 return;
             }
 
-            long multiplier = 1;
-            long addend = 0;
+            LCG lcg = combine(n);
 
-            long a = MULTIPLIER;
-            for (long k = n; k != 0; k >>>= 1) {
-                addend *= a + 1;
-                if ((k & 1) != 0) {
-                    multiplier *= a;
-                    addend = addend * MULTIPLIER + 1;
-                }
-                a *= a;
+            Log.print(message.getTextChannel(), formatLCGConstants(lcg.multiplier, lcg.addend));
+
+        } else if (params[0].equals("next") || params[0].equals("previous")) {
+
+            long seed;
+            long n;
+            try {
+                seed = parseSeed(params[1]);
+                n = params.length > 2 ? parseSeed(params[2]) : 1;
+            } catch (NumberFormatException e) {
+                Log.print(message.getTextChannel(), "Not a number");
+                return;
             }
-            addend *= ADDEND;
 
-            multiplier &= MASK;
-            addend &= MASK;
+            LCG lcg = combine(params[0].equals("next") ? n : -n);
 
-            Log.print(message.getTextChannel(), formatLCGConstants(multiplier, addend));
+            seed = seed * lcg.multiplier + lcg.addend;
+            seed &= MASK;
+
+            Log.print(message.getTextChannel(), formatHexDec(seed));
 
         }
     }
@@ -67,7 +71,9 @@ public class CommandLcg extends Command {
         final String PREFIX = Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc();
         return new String[] {
                 "`" + PREFIX + "`: prints the constants for the Java LCG",
-                "`" + PREFIX + "combine <n>`: prints the LCG equivalent to calling the Java LCG *n* times"
+                "`" + PREFIX + "combine <n>`: prints the LCG equivalent to calling the Java LCG *n* times",
+                "`" + PREFIX + "next <seed> [n=1]`: prints the seed *n* seeds after *seed* in the Java LCG",
+                "`" + PREFIX + "previous <seed> [n=1]`: prints the seed *n* seeds before *seed* in the Java LCG. Equivalent to `" + PREFIX + "next <seed> -n`"
         };
     }
 
@@ -87,6 +93,37 @@ public class CommandLcg extends Command {
             n = Long.parseLong(str);
         }
         return n & MASK;
+    }
+
+    private static LCG combine(long n) {
+        long multiplier = 1;
+        long addend = 0;
+
+        long a = MULTIPLIER;
+        for (long k = n; k != 0; k >>>= 1) {
+            addend *= a + 1;
+            if ((k & 1) != 0) {
+                multiplier *= a;
+                addend = addend * MULTIPLIER + 1;
+            }
+            a *= a;
+        }
+        addend *= ADDEND;
+
+        multiplier &= MASK;
+        addend &= MASK;
+
+        return new LCG(multiplier, addend);
+    }
+
+    private static class LCG {
+        private long multiplier;
+        private long addend;
+
+        public LCG(long multiplier, long addend) {
+            this.multiplier = multiplier;
+            this.addend = addend;
+        }
     }
 
 }
