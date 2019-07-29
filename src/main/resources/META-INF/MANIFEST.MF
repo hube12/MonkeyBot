@@ -1,4 +1,0 @@
-Manifest-Version: 1.0
-Class-Path: kaptainwutax.monkey
-Main-Class: kaptainwutax.monkey.MonkeyBot
-
