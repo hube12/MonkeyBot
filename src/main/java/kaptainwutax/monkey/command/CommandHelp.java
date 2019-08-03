@@ -30,9 +30,11 @@ public class CommandHelp extends Command {
             }
         }
 
-        for (String submsg : StrUtils.splitMessage(helpMessage.toString())) {
-            message.getTextChannel().sendMessage(submsg).queue();
-        }
+        message.getAuthor().openPrivateChannel().queue(dms -> {
+            for (String submsg : StrUtils.splitMessage(helpMessage.toString())) {
+                dms.sendMessage(submsg).queue();
+            }
+        });
     }
 
     @Override

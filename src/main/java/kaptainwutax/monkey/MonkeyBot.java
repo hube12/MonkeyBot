@@ -9,6 +9,7 @@ import kaptainwutax.monkey.utility.StrUtils;
 import net.dv8tion.jda.api.AccountType;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.ShutdownEvent;
@@ -98,9 +99,11 @@ public class MonkeyBot extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
+        if (event.getChannel().getType() != ChannelType.TEXT) return;
+
         String messageContent = event.getMessage().getContentRaw();
 
-        if(event.getMember().getIdLong() != 572817483489214475L) {
+        if (event.getAuthor().getIdLong() != jda.getSelfUser().getIdLong()) {
             HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(event.getGuild()));
             server.controller.sanitize(event);
         }
