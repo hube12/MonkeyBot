@@ -34,6 +34,7 @@ public class CommandHelp extends Command {
             for (String submsg : StrUtils.splitMessage(helpMessage.toString())) {
                 dms.sendMessage(submsg).queue();
             }
+            message.getChannel().sendMessage("Help has been sent to you via DMs").queue();
         });
     }
 
