@@ -10,9 +10,7 @@ import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 public class HolderController {
 
@@ -24,6 +22,9 @@ public class HolderController {
             "user disrespected the tall kaktoos."
     };
 
+    private static final String[] YUN_DEFENSE_TRIGGERS = {"im", "i'm", "i am", "i’m", "i‘m", "i`m"};
+    private static final String[] PUNCTUATION = {".", ",", "!", "?", ":", ";"};
+
     public HolderGuild server;
     @Expose private String serverId;
     @Expose public String moderationChannel = null;
@@ -31,6 +32,7 @@ public class HolderController {
     @Expose public boolean banMessage = true;
     @Expose public boolean sendAlert = true;
     @Expose public boolean funCommands = false;
+    @Expose public boolean yunDefense = true;
 
     @Expose private MessageLimiter noobLimit = new MessageLimiter(-1, -1, -1,-1);
     @Expose private List<RoleMap> roleLimits = new ArrayList<RoleMap>();
@@ -57,7 +59,25 @@ public class HolderController {
     }
 
     public void sanitize(MessageReceivedEvent event) {
-        if(this.moderationChannel == null || !this.isConsideredSpam(event))return;
+        if (this.moderationChannel == null) return;
+
+        // Yun Defense
+        if (this.yunDefense && event.getAuthor().getIdLong() == 389507745113440291L) { // Yun's ID
+            String message = event.getMessage().getContentDisplay();
+            String lower = message.toLowerCase(Locale.ENGLISH);
+            int imIndex = Arrays.stream(YUN_DEFENSE_TRIGGERS).mapToInt(s -> lower.lastIndexOf(s) + s.length()).max().orElse(-1);
+            if (imIndex != -1) {
+                String rest = message.substring(imIndex);
+                int endIndex = Arrays.stream(PUNCTUATION).mapToInt(s -> rest.contains(s) ? rest.indexOf(s) - 1 : rest.length()).min().orElse(rest.length());
+                String object = rest.substring(0, endIndex).trim();
+                if (!object.isEmpty()) {
+                    event.getChannel().sendMessage("Hi Yun, I'm Monkey!")
+                            .queue(m -> m.editMessage("Hi " + object + ", I'm Monkey!").queue());
+                }
+            }
+        }
+
+        if (!this.isConsideredSpam(event)) return;
 
         this.attemptBan(event, false);
         if(!this.sendAlert)return;

@@ -39,6 +39,8 @@ public class CommandMod extends Command {
             this.setFunCommands(message, StrUtils.removeFirstTrim(rawCommand, "funCommands"));
         } else if(rawCommand.startsWith("limit")) {
             this.setLimit(message, StrUtils.removeFirstTrim(rawCommand, "limit"));
+        } else if (rawCommand.startsWith("yunDefense")) {
+            this.setYunDefense(message, StrUtils.removeFirstTrim(rawCommand, "yunDefense"));
         }
     }
 
@@ -183,6 +185,27 @@ public class CommandMod extends Command {
         Log.print(message.getTextChannel(), "Updated role limits successfully.");
     }
 
+    private void setYunDefense(MessageReceivedEvent message, String params) {
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(message.getGuild()));
+
+        if(server.controller.moderationChannel == null || server.controller.moderationChannel.isEmpty()) {
+            Log.print(message.getTextChannel(), "This command requires a moderation channel. Use [monkey mod setChannel <#channel>].");
+        }
+
+        TextChannel moderationChannel = message.getGuild().getTextChannelById(StrUtils.getChannelId(server.controller.moderationChannel));
+        params = params.toLowerCase();
+
+        if(params.equals("false")) {
+            server.controller.yunDefense = false;
+            Log.print(moderationChannel, "Disabled Yun defense.");
+        } else if(params.equals("true")) {
+            server.controller.yunDefense = true;
+            Log.print(moderationChannel, "Enabled Yun defense.");
+        } else {
+            Log.print(moderationChannel, "Unknown argument \"" + params + "\".");
+        }
+    }
+
     @Override
     public String[] getCommandDesc() {
         return new String[] {
@@ -193,6 +216,7 @@ public class CommandMod extends Command {
                 "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "funCommands <flag> ` : If on, general fun commands will be enabled. Note that some of them are trollish and may cause issues.",
                 "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "limit <everyone> <here> <role> <user> ` : Sets the limit of everyone, here, role and user pings for users without a role.",
                 "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "limit <@&role> <everyone> <here> <role> <user> ` : Sets the limit of everyone, here, role and user pings for the specified role.",
+                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "yunDefense <flag> ` : If on, I'm jokes will be made against Yun. BRING HIM DOWN!",
         };
     }
 
