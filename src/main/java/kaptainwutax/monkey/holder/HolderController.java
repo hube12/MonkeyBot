@@ -89,7 +89,7 @@ public class HolderController {
 
                 if(s.controller.autoban) {
                     Log.print(moderationChannel, "Banned <@" + event.getMember().getIdLong() + ">, please double check to make sure it wasn't a mistake.");
-                    this.getServer().getGuild().getController().ban(event.getMember(), 0, "Automatic ping ban from " + event.getGuild().getName() + ".").queue();
+                    s.getGuild().getController().ban(event.getMember(), 0, "Automatic ping ban from " + event.getGuild().getName() + ".").queue();
                 }
             }
         }
