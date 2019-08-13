@@ -145,6 +145,12 @@ public class CommandMod extends Command {
     private void setLimit(MessageReceivedEvent message, String params) {
         HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(message.getGuild()));
 
+        if(server.controller.moderationChannel == null || server.controller.moderationChannel.isEmpty()) {
+            Log.print(message.getTextChannel(), "This command requires a moderation channel. Use [monkey mod setChannel <#channel>].");
+        }
+
+        TextChannel moderationChannel = message.getGuild().getTextChannelById(StrUtils.getChannelId(server.controller.moderationChannel));
+
         List<String> rawLimits = Arrays.asList(params.split(" "));
 
         String roleId = null;
@@ -182,7 +188,7 @@ public class CommandMod extends Command {
             return;
         }
 
-        Log.print(message.getTextChannel(), "Updated role limits successfully.");
+        Log.print(moderationChannel, "Updated role limits successfully.");
     }
 
     private void setYunDefense(MessageReceivedEvent message, String params) {

@@ -99,14 +99,13 @@ public class MonkeyBot extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
-        if (event.getChannel().getType() != ChannelType.TEXT) return;
+        if(event.getChannel().getType() != ChannelType.TEXT)return;
+        if(event.getAuthor().isBot())return;
 
         String messageContent = event.getMessage().getContentRaw();
 
-        if (event.getAuthor().getIdLong() != jda.getSelfUser().getIdLong()) {
-            HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(event.getGuild()));
-            server.controller.sanitize(event);
-        }
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(event.getGuild()));
+        server.controller.sanitize(event);
 
         if(Commands.MONKEY.isCommand(messageContent)) {
             Commands.MONKEY.processCommand(event, messageContent);
