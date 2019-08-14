@@ -3,6 +3,7 @@ package kaptainwutax.monkey.utility;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.Expose;
+import kaptainwutax.monkey.holder.UserInfo;
 import kaptainwutax.monkey.init.Guilds;
 
 import java.io.FileNotFoundException;
@@ -10,6 +11,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class MonkeyConfig {
@@ -17,6 +20,10 @@ public class MonkeyConfig {
     @Expose public String token;
     @Expose public List<String> botAdmins = new ArrayList<>();
     @Expose public Guilds guilds = new Guilds();
+    /**
+     * A list of users SORTED BY ID
+     */
+    @Expose private List<UserInfo> users = new ArrayList<>();
 
     public static MonkeyConfig generateConfig(String location) throws FileNotFoundException {
         return new Gson().fromJson(new FileReader(location), MonkeyConfig.class);
@@ -27,6 +34,15 @@ public class MonkeyConfig {
         new GsonBuilder().excludeFieldsWithoutExposeAnnotation().setPrettyPrinting().create().toJson(config, writer);
         writer.flush();
         writer.close();
+    }
+
+    public UserInfo getOrCreateUser(long id) {
+        int index = Collections.binarySearch(users, new UserInfo(id), Comparator.comparingLong(u -> u.id));
+        if (index >= 0)
+            return users.get(index);
+        UserInfo user = new UserInfo(id);
+        users.add(-index - 1, user);
+        return user;
     }
 
 }

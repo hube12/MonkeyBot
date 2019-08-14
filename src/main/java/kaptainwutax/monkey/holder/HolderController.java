@@ -1,6 +1,7 @@
 package kaptainwutax.monkey.holder;
 
 import com.google.gson.annotations.Expose;
+import kaptainwutax.monkey.MonkeyBot;
 import kaptainwutax.monkey.init.Guilds;
 import kaptainwutax.monkey.utility.Log;
 import kaptainwutax.monkey.utility.MessageLimiter;
@@ -90,6 +91,7 @@ public class HolderController {
                 if(s.controller.autoban) {
                     Log.print(moderationChannel, "Banned <@" + event.getMember().getIdLong() + ">, please double check to make sure it wasn't a mistake.");
                     s.getGuild().getController().ban(event.getMember(), 0, "Automatic ping ban from " + event.getGuild().getName() + ".").queue();
+                    MonkeyBot.instance().config.getOrCreateUser(event.getMember().getIdLong()).autobannedServers.add(s.getGuild().getId());
                 }
             }
         }
