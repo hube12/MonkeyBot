@@ -1,19 +1,24 @@
 package kaptainwutax.monkey.command;
 
+import kaptainwutax.monkey.MonkeyBot;
 import kaptainwutax.monkey.holder.HolderGuild;
+import kaptainwutax.monkey.holder.UserInfo;
 import kaptainwutax.monkey.init.Commands;
 import kaptainwutax.monkey.init.Guilds;
 import kaptainwutax.monkey.utility.Log;
 import kaptainwutax.monkey.utility.StrUtils;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class CommandMod extends Command {
 
@@ -41,6 +46,8 @@ public class CommandMod extends Command {
             this.setLimit(message, StrUtils.removeFirstTrim(rawCommand, "limit"));
         } else if (rawCommand.startsWith("yunDefense")) {
             this.setYunDefense(message, StrUtils.removeFirstTrim(rawCommand, "yunDefense"));
+        } else if (rawCommand.startsWith("unautoban")) {
+            this.unautoban(message, StrUtils.removeFirstTrim(rawCommand, "unautoban"));
         }
     }
 
@@ -212,6 +219,72 @@ public class CommandMod extends Command {
         }
     }
 
+    private void unautoban(MessageReceivedEvent message, String params) {
+        final Set<String> GUILD_WHITELIST = new HashSet<>();
+        GUILD_WHITELIST.add("468095753701818389"); // Earth's Place
+        GUILD_WHITELIST.add("505310901461581824"); // Monkeys
+        GUILD_WHITELIST.add("292684566966304768"); // TMC
+        GUILD_WHITELIST.add("211786369951989762"); // SciCraft
+        GUILD_WHITELIST.add("169373832510046208"); // ProtoTech
+        GUILD_WHITELIST.add("403047405877985281"); // TechRock
+        GUILD_WHITELIST.add("320752694715219971"); // Bismuth
+        GUILD_WHITELIST.add("511912185388204034"); // TIS Trinity Union
+        GUILD_WHITELIST.add("429700535206281217"); // PulseFiction
+        if (!GUILD_WHITELIST.contains(message.getGuild().getId())) {
+            message.getChannel().sendMessage("This server is not on the whitelist to use this command. Contact a Monkey bot dev if you think this is an error.").queue();
+            return;
+        }
+
+        String[] args = params.split(" ");
+        long userId;
+        try {
+            userId = Long.parseLong(args[0]);
+        } catch (NumberFormatException e) {
+            message.getChannel().sendMessage("Invalid user ID").queue();
+            return;
+        }
+
+        UserInfo user = MonkeyBot.instance().config.getOrCreateUser(userId);
+        if (user.autobannedServers.isEmpty()) {
+            message.getChannel().sendMessage("That user wasn't autobanned by Monkey").queue();
+            return;
+        }
+        AtomicBoolean hasApologized = new AtomicBoolean(false);
+
+        String reason = Arrays.stream(args).skip(1).collect(Collectors.joining(" "));
+
+        for (String serverId : user.autobannedServers) {
+            Guild guild = MonkeyBot.instance().jda.getGuildById(serverId);
+            if (guild == null) continue;
+
+            guild.retrieveBanById(user.id).queue(ban -> {
+                guild.getController().unban(ban.getUser()).queue();
+
+                if (!hasApologized.getAndSet(true)) {
+                    ban.getUser().openPrivateChannel().queue(dms -> {
+                        dms.sendMessage("We realize our mistake, and have un-autobanned you from " + user.autobannedServers.size() + " servers. Sorry about that!").queue();
+                    }, t -> {});
+                }
+
+                HolderGuild holder = Guilds.instance().getOrCreateServer(new HolderGuild(guild));
+                if (holder.controller.moderationChannel != null && !holder.controller.moderationChannel.isEmpty()) {
+                    TextChannel moderationChannel = guild.getTextChannelById(holder.controller.moderationChannel);
+                    if (moderationChannel != null) {
+                        moderationChannel.sendMessage(
+                                String.format("User %s#%s was un-autobanned by %s in %s%s",
+                                        ban.getUser().getName(), ban.getUser().getDiscriminator(),
+                                        message.getAuthor().getName(),
+                                        message.getGuild().getName(),
+                                        reason == null ? "" : (". Reason: " + reason)))
+                                .queue();
+                    }
+                }
+            }, t -> {});
+        }
+
+        user.autobannedServers.clear();
+    }
+
     @Override
     public String[] getCommandDesc() {
         return new String[] {
@@ -223,6 +296,7 @@ public class CommandMod extends Command {
                 "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "limit <everyone> <here> <role> <user> ` : Sets the limit of everyone, here, role and user pings for users without a role.",
                 "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "limit <@&role> <everyone> <here> <role> <user> ` : Sets the limit of everyone, here, role and user pings for the specified role.",
                 "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "yunDefense <flag> ` : If on, I'm jokes will be made against Yun. BRING HIM DOWN!",
+                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "unautoban <user-id> [reason] `: Reverse a Monkey autoban. Can only unban users banned via a Monkey autoban. Only works on a whitelist of discord guilds - ask a Monkey bot dev to add your guild.",
         };
     }
 
