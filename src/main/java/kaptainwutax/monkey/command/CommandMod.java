@@ -48,6 +48,8 @@ public class CommandMod extends Command {
             this.setYunDefense(message, StrUtils.removeFirstTrim(rawCommand, "yunDefense"));
         } else if (rawCommand.startsWith("unautoban")) {
             this.unautoban(message, StrUtils.removeFirstTrim(rawCommand, "unautoban"));
+        } else if (rawCommand.startsWith("serverWhitelist")) {
+            this.modifyServerWhitelist(message, StrUtils.removeFirstTrim(rawCommand, "serverWhitelist"));
         }
     }
 
@@ -220,17 +222,8 @@ public class CommandMod extends Command {
     }
 
     private void unautoban(MessageReceivedEvent message, String params) {
-        final Set<String> GUILD_WHITELIST = new HashSet<>();
-        GUILD_WHITELIST.add("468095753701818389"); // Earth's Place
-        GUILD_WHITELIST.add("505310901461581824"); // Monkeys
-        GUILD_WHITELIST.add("292684566966304768"); // TMC
-        GUILD_WHITELIST.add("211786369951989762"); // SciCraft
-        GUILD_WHITELIST.add("169373832510046208"); // ProtoTech
-        GUILD_WHITELIST.add("403047405877985281"); // TechRock
-        GUILD_WHITELIST.add("320752694715219971"); // Bismuth
-        GUILD_WHITELIST.add("511912185388204034"); // TIS Trinity Union
-        GUILD_WHITELIST.add("429700535206281217"); // PulseFiction
-        if (!GUILD_WHITELIST.contains(message.getGuild().getId())) {
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(message.getGuild()));
+        if (!server.whitelisted) {
             message.getChannel().sendMessage("This server is not on the whitelist to use this command. Contact a Monkey bot dev if you think this is an error.").queue();
             return;
         }
@@ -285,6 +278,54 @@ public class CommandMod extends Command {
         user.autobannedServers.clear();
     }
 
+    private void modifyServerWhitelist(MessageReceivedEvent message, String params) {
+        if (!MonkeyBot.instance().config.botAdmins.contains(message.getAuthor().getId())) {
+            message.getChannel().sendMessage("This command is bot-admin-only").queue();
+            return;
+        }
+
+        if ("list".equals(params)) {
+            StringBuilder ret = new StringBuilder();
+            for (HolderGuild server : Guilds.instance().servers) {
+                if (server.whitelisted) {
+                    Guild guild = MonkeyBot.instance().jda.getGuildById(server.id);
+                    if (guild != null) {
+                        if (ret.length() != 0)
+                            ret.append("\n");
+                        ret.append("- ").append(guild.getName()).append(" (ID: ").append(guild.getId()).append(")");
+                    }
+                }
+            }
+            for (String part : StrUtils.splitMessage(ret.toString())) {
+                message.getChannel().sendMessage(part).queue();
+            }
+            return;
+        }
+
+        String[] args = params.split(" ");
+        if (args.length != 2) {
+            return;
+        }
+
+        Guild guild = MonkeyBot.instance().jda.getGuildById(args[1]);
+        if (guild == null) {
+            message.getChannel().sendMessage("No such server").queue();
+            return;
+        }
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(guild));
+
+        switch (args[0]) {
+            case "add":
+                server.whitelisted = true;
+                message.getChannel().sendMessage("Added server **" + guild.getName() + "** to the server whitelist").queue();
+                break;
+            case "remove":
+                server.whitelisted = false;
+                message.getChannel().sendMessage("Removed server **" + guild.getName() + "** from the server whitelist").queue();
+                break;
+        }
+    }
+
     @Override
     public String[] getCommandDesc() {
         return new String[] {
@@ -297,6 +338,7 @@ public class CommandMod extends Command {
                 "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "limit <@&role> <everyone> <here> <role> <user> ` : Sets the limit of everyone, here, role and user pings for the specified role.",
                 "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "yunDefense <flag> ` : If on, I'm jokes will be made against Yun. BRING HIM DOWN!",
                 "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "unautoban <user-id> [reason] `: Reverse a Monkey autoban. Can only unban users banned via a Monkey autoban. Only works on a whitelist of discord guilds - ask a Monkey bot dev to add your guild.",
+                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "serverWhitelist <add|remove|list> [server-id]`: modify the server whitelist (bot admin only)",
         };
     }
 

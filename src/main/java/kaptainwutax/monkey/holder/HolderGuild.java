@@ -20,6 +20,7 @@ public final class HolderGuild {
     @Expose public List<HolderChannel> channels = new ArrayList<>();
     @Expose public String summaryChannel = null;
     @Expose public String[] summaryMessageIds = new String[0];
+    @Expose public boolean whitelisted = false;
 
     @Expose public HolderController controller;
 
