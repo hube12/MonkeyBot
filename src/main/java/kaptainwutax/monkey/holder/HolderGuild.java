@@ -2,9 +2,7 @@ package kaptainwutax.monkey.holder;
 
 import com.google.gson.annotations.Expose;
 import kaptainwutax.monkey.MonkeyBot;
-import kaptainwutax.monkey.init.Guilds;
 import kaptainwutax.monkey.utility.Log;
-import kaptainwutax.monkey.utility.MessageLimiter;
 import kaptainwutax.monkey.utility.StrUtils;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.TextChannel;
@@ -20,7 +18,6 @@ public final class HolderGuild {
     @Expose public List<HolderChannel> channels = new ArrayList<>();
     @Expose public String summaryChannel = null;
     @Expose public String[] summaryMessageIds = new String[0];
-    @Expose public boolean whitelisted = false;
 
     @Expose public HolderController controller;
 
