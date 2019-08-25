@@ -66,7 +66,7 @@ public class HolderController {
         if (this.yunDefense && event.getAuthor().getIdLong() == 389507745113440291L) { // Yun's ID
             String message = event.getMessage().getContentDisplay();
             String lower = message.toLowerCase(Locale.ENGLISH);
-            int imIndex = Arrays.stream(YUN_DEFENSE_TRIGGERS).mapToInt(s -> lower.lastIndexOf(s) + s.length()).max().orElse(-1);
+            int imIndex = Arrays.stream(YUN_DEFENSE_TRIGGERS).filter(lower::contains).mapToInt(s -> lower.lastIndexOf(s) + s.length()).max().orElse(-1);
             if (imIndex != -1) {
                 String rest = message.substring(imIndex);
                 int endIndex = Arrays.stream(PUNCTUATION).mapToInt(s -> rest.contains(s) ? rest.indexOf(s) - 1 : rest.length()).min().orElse(rest.length());
