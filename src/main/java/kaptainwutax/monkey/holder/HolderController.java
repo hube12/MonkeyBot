@@ -41,6 +41,9 @@ public class HolderController {
     private transient PingInfo rolePingInfo = new PingInfo();
     private transient PingInfo userPingInfo = new PingInfo();
 
+    // for gson
+    private HolderController() {}
+
     public HolderController(HolderGuild server) {
         this.server = server;
         this.serverId = this.server.id;
