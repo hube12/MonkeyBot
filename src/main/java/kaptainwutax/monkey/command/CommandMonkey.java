@@ -1,12 +1,18 @@
 package kaptainwutax.monkey.command;
 
+import kaptainwutax.monkey.MonkeyBot;
 import kaptainwutax.monkey.init.Commands;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 public class CommandMonkey extends Command {
 
-    public CommandMonkey(String[] prefix) {
-        super(prefix);
+    public CommandMonkey() {
+        super(null);
+    }
+
+    @Override
+    protected String[] getPrefix() {
+        return MonkeyBot.instance().config.commandPrefix;
     }
 
     @Override

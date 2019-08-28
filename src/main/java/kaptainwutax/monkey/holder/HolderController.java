@@ -83,6 +83,11 @@ public class HolderController {
 
         if (!this.isConsideredSpam(event)) return;
 
+        if (MonkeyBot.instance().config.simulateBans) {
+            event.getChannel().sendMessage("If I were real monkey bot, I would have banned you O_o").queue();
+            return;
+        }
+
         this.attemptBan(event, false);
         if(!this.sendAlert)return;
 
