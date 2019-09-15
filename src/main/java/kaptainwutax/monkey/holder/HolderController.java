@@ -104,7 +104,9 @@ public class HolderController {
         if(!force && !this.autoban)return;
         if(this.banMessage)Log.print(event.getTextChannel(), BAN_MESSAGES[new Random().nextInt(BAN_MESSAGES.length)].replaceFirst("user", "<@" + event.getMember().getId() + ">"));
         Log.print(moderationChannel, "Banned <@" + event.getMember().getIdLong() + ">, please double check to make sure it wasn't a mistake.");
-        this.getServer().getGuild().getController().ban(event.getMember(), 0, "Automatic ping ban.").queue();
+        this.getServer().getGuild().getController().ban(event.getMember(), 0, "Automatic ping ban.").queue(ban -> {
+            MonkeyBot.instance().config.getOrCreateUser(event.getMember().getIdLong()).autobannedServers.add(getServer().getGuild().getId());
+        });
     }
 
     public boolean isConsideredSpam(MessageReceivedEvent event) {
