@@ -7,10 +7,14 @@ import java.util.stream.Stream;
 
 public abstract class Command {
 
-    protected String[] prefix;
+    private String[] prefix;
 
     public Command(String[] prefix) {
         this.prefix = prefix;
+    }
+
+    protected String[] getPrefix() {
+        return prefix;
     }
 
     public abstract void processCommand(MessageReceivedEvent message, String rawCommand);
@@ -20,9 +24,9 @@ public abstract class Command {
     public String getPrefixDesc() {
         StringBuilder prefix = new StringBuilder();
 
-        for(int i = 0; i < this.prefix.length; i++) {
-            prefix.append(this.prefix[i]);
-            if(i + 1 == this.prefix.length)break;
+        for(int i = 0; i < this.getPrefix().length; i++) {
+            prefix.append(this.getPrefix()[i]);
+            if(i + 1 == this.getPrefix().length)break;
             prefix.append("/");
         }
 
@@ -30,11 +34,11 @@ public abstract class Command {
     }
 
     public boolean isCommand(String command) {
-        return (Stream.of(this.prefix).anyMatch(s -> command.trim().startsWith(s)));
+        return (Stream.of(this.getPrefix()).anyMatch(s -> command.trim().startsWith(s)));
     }
 
     public String removePrefix(String command) {
-        return StrUtils.removeFirstTrim(command, Stream.of(this.prefix).filter(s -> command.trim().startsWith(s)).findFirst().get());
+        return StrUtils.removeFirstTrim(command, Stream.of(this.getPrefix()).filter(s -> command.trim().startsWith(s)).findFirst().get());
     }
 
 }

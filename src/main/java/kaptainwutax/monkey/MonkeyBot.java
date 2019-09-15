@@ -105,7 +105,7 @@ public class MonkeyBot extends ListenerAdapter {
         String messageContent = event.getMessage().getContentRaw();
 
         HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(event.getGuild()));
-        server.controller.sanitize(event);
+        if(server != null)server.controller.sanitize(event);
 
         if(Commands.MONKEY.isCommand(messageContent)) {
             Commands.MONKEY.processCommand(event, messageContent);

@@ -44,10 +44,12 @@ public class CommandMod extends Command {
             this.setFunCommands(message, StrUtils.removeFirstTrim(rawCommand, "funCommands"));
         } else if(rawCommand.startsWith("limit")) {
             this.setLimit(message, StrUtils.removeFirstTrim(rawCommand, "limit"));
-        } else if (rawCommand.startsWith("yunDefense")) {
+        } else if(rawCommand.startsWith("yunDefense")) {
             this.setYunDefense(message, StrUtils.removeFirstTrim(rawCommand, "yunDefense"));
-        } else if (rawCommand.startsWith("unautoban")) {
+        } else if(rawCommand.startsWith("unautoban")) {
             this.unautoban(message, StrUtils.removeFirstTrim(rawCommand, "unautoban"));
+        } else if(rawCommand.startsWith("broadcast")) {
+            this.broadcast(message, StrUtils.removeFirstTrim(rawCommand, "broadcast"));
         }
     }
 
@@ -275,6 +277,24 @@ public class CommandMod extends Command {
         user.autobannedServers.clear();
     }
 
+    private void broadcast(MessageReceivedEvent message, String params) {
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(message.getGuild()));
+
+        for(HolderGuild s: Guilds.instance().servers) {
+            if(s.controller.moderationChannel != null && s.controller.sendAlert) {
+                TextChannel moderationChannel = s.getGuild().getTextChannelById(StrUtils.getChannelId(s.controller.moderationChannel));
+
+                if(moderationChannel != null) {
+                    String broadcastMessage = "====== **[BROADCAST]** ";
+                    broadcastMessage += "<@" + message.getMember().getIdLong() + ">";
+                    broadcastMessage += " from **" + message.getGuild().getName() + "** ======\n";
+                    broadcastMessage += params;
+                    Log.print(moderationChannel, broadcastMessage);
+                }
+            }
+        }
+    }
+
     @Override
     public String[] getCommandDesc() {
         return new String[] {
@@ -287,6 +307,7 @@ public class CommandMod extends Command {
                 "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "limit <@&role> <everyone> <here> <role> <user> ` : Sets the limit of everyone, here, role and user pings for the specified role.",
                 "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "yunDefense <flag> ` : If on, I'm jokes will be made against Yun. BRING HIM DOWN!",
                 "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "unautoban <user-id> [reason] `: Reverse a Monkey autoban. Can only unban users banned via a Monkey autoban. Bot admin only",
+                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "broadcast [message] `: Broadcast a message to all moderation channels on all active discords. Use sparingly."
         };
     }
 

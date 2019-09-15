@@ -25,6 +25,10 @@ public class MonkeyConfig {
      */
     @Expose private List<UserInfo> users = new ArrayList<>();
 
+    // Debugging features
+    @Expose public String[] commandPrefix = {"monkey", "\uD83D\uDC12"};
+    @Expose public boolean simulateBans = false;
+
     public static MonkeyConfig generateConfig(String location) throws FileNotFoundException {
         return new Gson().fromJson(new FileReader(location), MonkeyConfig.class);
     }

@@ -3,9 +3,7 @@ package kaptainwutax.monkey.holder;
 import com.google.gson.annotations.Expose;
 import kaptainwutax.monkey.MonkeyBot;
 import kaptainwutax.monkey.init.Guilds;
-import kaptainwutax.monkey.utility.Log;
-import kaptainwutax.monkey.utility.MessageLimiter;
-import kaptainwutax.monkey.utility.StrUtils;
+import kaptainwutax.monkey.utility.*;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.TextChannel;
@@ -37,6 +35,14 @@ public class HolderController {
 
     @Expose private MessageLimiter noobLimit = new MessageLimiter(-1, -1, -1,-1);
     @Expose private List<RoleMap> roleLimits = new ArrayList<RoleMap>();
+
+    private transient PingInfo everyonePingInfo = new PingInfo();
+    private transient PingInfo herePingInfo = new PingInfo();
+    private transient PingInfo rolePingInfo = new PingInfo();
+    private transient PingInfo userPingInfo = new PingInfo();
+
+    // for gson
+    private HolderController() {}
 
     public HolderController(HolderGuild server) {
         this.server = server;
@@ -79,6 +85,11 @@ public class HolderController {
         }
 
         if (!this.isConsideredSpam(event)) return;
+
+        if (MonkeyBot.instance().config.simulateBans) {
+            event.getChannel().sendMessage("If I were real monkey bot, I would have banned you O_o").queue();
+            return;
+        }
 
         this.attemptBan(event, false);
         if(!this.sendAlert)return;
@@ -137,10 +148,27 @@ public class HolderController {
         messageContent = removeHiddenText(messageContent, "```");
         messageContent = removeHiddenText(messageContent, "`");
 
-        int everyone = findSimplePing(messageContent, "@everyone");
-        int here = findSimplePing(messageContent, "@here");
-        int role = event.getMessage().getMentionedRoles().size();
-        int user = event.getMessage().getMentionedMembers().size();
+        UserPingInfo everyonePings = everyonePingInfo.get(event.getGuild().getId(), event.getAuthor().getId());
+        if (findSimplePing(messageContent, "@everyone") > 0)
+            everyonePings.addPing(event.getMessageId());
+        UserPingInfo herePings = herePingInfo.get(event.getGuild().getId(), event.getAuthor().getId());
+        if (findSimplePing(messageContent, "@here") > 0)
+            herePings.addPing(event.getMessageId());
+        UserPingInfo rolePings = rolePingInfo.get(event.getGuild().getId(), event.getAuthor().getId());
+        for (Role role : event.getMessage().getMentionedRoles())
+            rolePings.addPing(role.getId());
+        UserPingInfo userPings = userPingInfo.get(event.getGuild().getId(), event.getAuthor().getId());
+        for (Member member : event.getMessage().getMentionedMembers())
+            userPings.addPing(member.getId());
+
+        everyonePings.purge();
+        int everyone = everyonePings.getPingCount();
+        herePings.purge();
+        int here = herePings.getPingCount();
+        rolePings.purge();
+        int role = rolePings.getPingCount();
+        userPings.purge();
+        int user = userPings.getPingCount();
 
         return new int[] {everyone, here, role, user};
     }

@@ -9,7 +9,7 @@ public class Commands {
 
     public static List<Command> COMMANDS = new ArrayList<Command>();
 
-    public static Command MONKEY = new CommandMonkey(new String[] {"monkey", "\uD83D\uDC12"});
+    public static Command MONKEY = new CommandMonkey();
     public static Command HELP = new CommandHelp(new String[] {"help"});
 
     public static Command PING = new CommandPing(new String[] {"ping", "\uD83C\uDFD3"});
