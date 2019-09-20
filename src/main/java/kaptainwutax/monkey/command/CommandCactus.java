@@ -1,44 +1,29 @@
 package kaptainwutax.monkey.command;
 
-import kaptainwutax.monkey.holder.HolderGuild;
-import kaptainwutax.monkey.init.Commands;
-import kaptainwutax.monkey.init.Guilds;
+import com.mojang.brigadier.CommandDispatcher;
 import kaptainwutax.monkey.utility.CactusSimulation;
 import kaptainwutax.monkey.utility.MathHelper;
-import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
-public class CommandCactus extends Command {
+import static kaptainwutax.monkey.command.arguments.MultibaseLongArgumentType.*;
+import static kaptainwutax.monkey.init.Commands.*;
+
+public class CommandCactus {
 
     private static final String[] MESSAGE = {"...", ", very lame.", " jrek.", " ¯\\_(ツ)_/¯.", ", you have high IQ.", ", impressive.", " epic brainer.", " you legend."};
 
-    public CommandCactus(String[] prefix) {
-        super(prefix);
+    public static void register(CommandDispatcher<MessageCommandSource> dispatcher) {
+        dispatcher.register(literal("cactus", "Returns the height of the cactus in that chunk seed.")
+            .requires(MessageCommandSource::canUseFunCommands)
+            .then(argument("seed", multibaseLong())
+                .executes(ctx -> cactus(ctx.getSource(), getMultibaseLong(ctx, "seed")))));
     }
 
-    @Override
-    public void processCommand(MessageReceivedEvent message, String rawCommand) {
-        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(message.getGuild()));
-        if(!server.controller.funCommands && !message.getMember().hasPermission(Permission.ADMINISTRATOR))return;
-
-        rawCommand = this.removePrefix(rawCommand);
-
-        long seed;
-
-        try {seed = Long.parseLong(rawCommand);}
-        catch(Exception e) {return;}
-
+    private static int cactus(MessageCommandSource source, long seed) {
         CactusSimulation cactusSimulation = new CactusSimulation(CactusSimulation.DESERT, 62);
         int cactusHeight = cactusSimulation.populate(seed);
 
-        message.getChannel().sendMessage("You found a " + cactusHeight + " tall cactus" + MESSAGE[MathHelper.clamp(cactusHeight, 0, MESSAGE.length - 1)]).queue();
-    }
-
-    @Override
-    public String[] getCommandDesc() {
-        return new String[] {
-                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "<seed> ` : Returns the height cactus in that chunk seed."
-        };
+        source.getChannel().sendMessage("You found a " + cactusHeight + " tall cactus" + MESSAGE[MathHelper.clamp(cactusHeight, 0, MESSAGE.length - 1)]).queue();
+        return cactusHeight;
     }
 
 }

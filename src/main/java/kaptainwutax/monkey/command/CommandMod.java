@@ -1,249 +1,179 @@
 package kaptainwutax.monkey.command;
 
+import com.mojang.brigadier.CommandDispatcher;
 import kaptainwutax.monkey.MonkeyBot;
 import kaptainwutax.monkey.holder.HolderGuild;
 import kaptainwutax.monkey.holder.UserInfo;
-import kaptainwutax.monkey.init.Commands;
 import kaptainwutax.monkey.init.Guilds;
 import kaptainwutax.monkey.utility.Log;
 import kaptainwutax.monkey.utility.StrUtils;
-import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import javax.annotation.Nullable;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
-public class CommandMod extends Command {
+import static com.mojang.brigadier.arguments.BoolArgumentType.*;
+import static com.mojang.brigadier.arguments.IntegerArgumentType.*;
+import static com.mojang.brigadier.arguments.LongArgumentType.*;
+import static com.mojang.brigadier.arguments.StringArgumentType.*;
+import static kaptainwutax.monkey.command.arguments.ChannelArgumentType.*;
+import static kaptainwutax.monkey.command.arguments.RoleArgumentType.*;
+import static kaptainwutax.monkey.init.Commands.*;
 
-    public CommandMod(String[] prefix) {
-        super(prefix);
+public class CommandMod {
+
+    public static void register(CommandDispatcher<MessageCommandSource> dispatcher) {
+        dispatcher.register(literal("mod", "Moderation tools for Monkey Bot.")
+            .requires(MessageCommandSource::isAdministrator)
+            .then(literal("setChannel", "Sets the moderation channel. Will be used to print logs.")
+                .then(argument("channel", channel())
+                    .executes(ctx -> setChannel(ctx.getSource(), getChannel(ctx, "channel")))))
+            .then(literal("autoban", "Should the user be automatically banned if he spams? Note that you will always be notified in the moderation channel if a user spams.")
+                .requires(CommandMod::hasModerationChannel)
+                .then(argument("value", bool())
+                    .executes(ctx -> setAutoban(ctx.getSource(), getBool(ctx, "value")))))
+            .then(literal("banMessage", "If on, this will print a custom ban message in the target channel whenever someone gets banned from spamming.")
+                .requires(CommandMod::hasModerationChannel)
+                .then(argument("value", bool())
+                    .executes(ctx -> setBanMessage(ctx.getSource(), getBool(ctx, "value")))))
+            .then(literal("sendAlert", "If on, spam alerts will be sent to and from other discords.")
+                .requires(CommandMod::hasModerationChannel)
+                .then(argument("value", bool())
+                    .executes(ctx -> setSendAlert(ctx.getSource(), getBool(ctx, "value")))))
+            .then(literal("funCommands", "If on, general fun commands will be enabled. Note that some of them are trollish and may cause issues.")
+                .requires(CommandMod::hasModerationChannel)
+                .then(argument("value", bool())
+                    .executes(ctx -> setFunCommands(ctx.getSource(), getBool(ctx, "value")))))
+            .then(literal("limit", "Sets the limit of everyone, here, role and user pings for users with the specified role. If the role is unspecified, this applies to users without a role.")
+                .requires(CommandMod::hasModerationChannel)
+                .then(argument("everyoneLimit", integer(-1))
+                    .then(argument("hereLimit", integer(-1))
+                        .then(argument("roleLimit", integer(-1))
+                            .then(argument("userLimit", integer(-1))
+                                .executes(ctx -> setLimits(ctx.getSource(), null, getInteger(ctx, "everyoneLimit"), getInteger(ctx, "hereLimit"), getInteger(ctx, "roleLimit"), getInteger(ctx, "userLimit")))
+                                .then(argument("role", role())
+                                    .executes(ctx -> setLimits(ctx.getSource(), getRole(ctx, "role"), getInteger(ctx, "everyoneLimit"), getInteger(ctx, "hereLimit"), getInteger(ctx, "roleLimit"), getInteger(ctx, "userLimit")))))))))
+            .then(literal("yunDefense", "If on, I'm jokes will be made against Yun. BRING HIM DOWN!")
+                .requires(CommandMod::hasModerationChannel)
+                .then(argument("value", bool())
+                    .executes(ctx -> setYunDefense(ctx.getSource(), getBool(ctx, "value")))))
+            .then(literal("unautoban", "Reverse a Monkey autoban. Can only unban users banned via a Monkey autoban.")
+                .requires(source -> MonkeyBot.instance().config.botAdmins.contains(source.getUser().getId()))
+                .then(argument("userId", longArg())
+                    .executes(ctx -> unautoban(ctx.getSource(), getLong(ctx, "userId"), null))
+                    .then(argument("reason", greedyString())
+                        .executes(ctx -> unautoban(ctx.getSource(), getLong(ctx, "userId"), getString(ctx, "reason"))))))
+            .then(literal("broadcast", "Broadcast a message to all moderation channels on all active discords. Use sparingly.")
+                .then(argument("message", greedyString())
+                    .executes(ctx -> broadcast(ctx.getSource(), getString(ctx, "message"))))));
     }
 
-    @Override
-    public void processCommand(MessageReceivedEvent message, String rawCommand) {
-        rawCommand = this.removePrefix(rawCommand);
-
-        if(!message.getMember().hasPermission(Permission.ADMINISTRATOR))return;
-
-        if(rawCommand.startsWith("setChannel")) {
-            this.setChannel(message, StrUtils.removeFirstTrim(rawCommand, "setChannel"));
-        } else if(rawCommand.startsWith("autoban")) {
-            this.setAutoban(message, StrUtils.removeFirstTrim(rawCommand, "autoban"));
-        } else if(rawCommand.startsWith("banMessage")) {
-            this.setBanMessage(message, StrUtils.removeFirstTrim(rawCommand, "banMessage"));
-        } else if(rawCommand.startsWith("sendAlert")) {
-            this.setSendAlert(message, StrUtils.removeFirstTrim(rawCommand, "sendAlert"));
-        } else if(rawCommand.startsWith("funCommands")) {
-            this.setFunCommands(message, StrUtils.removeFirstTrim(rawCommand, "funCommands"));
-        } else if(rawCommand.startsWith("limit")) {
-            this.setLimit(message, StrUtils.removeFirstTrim(rawCommand, "limit"));
-        } else if(rawCommand.startsWith("yunDefense")) {
-            this.setYunDefense(message, StrUtils.removeFirstTrim(rawCommand, "yunDefense"));
-        } else if(rawCommand.startsWith("unautoban")) {
-            this.unautoban(message, StrUtils.removeFirstTrim(rawCommand, "unautoban"));
-        } else if(rawCommand.startsWith("broadcast")) {
-            this.broadcast(message, StrUtils.removeFirstTrim(rawCommand, "broadcast"));
-        }
+    private static boolean hasModerationChannel(MessageCommandSource source) {
+        if (source.isDMs())
+            return false;
+        assert source.getGuild() != null;
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(source.getGuild()));
+        return server.controller.moderationChannel != null && !server.controller.moderationChannel.isEmpty() && source.getGuild().getTextChannelById(server.controller.moderationChannel) != null;
     }
 
-    private void setChannel(MessageReceivedEvent message, String params) {
-        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(message.getGuild()));
+    private static void sendModerationFeedback(MessageCommandSource source, String message) {
+        assert source.getGuild() != null;
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(source.getGuild()));
 
-        String channelId = StrUtils.getChannelId(params);
-        TextChannel channel = message.getGuild().getTextChannelById(StrUtils.getChannelId(channelId));
+        TextChannel moderationChannel = source.getGuild().getTextChannelById(StrUtils.getChannelId(server.controller.moderationChannel));
+        assert moderationChannel != null;
 
-        if(channel == null) {
-            Log.print(message.getTextChannel(), "There was an error accessing this channel.");
-        } else {
-            Log.print(channel, "This channel was successfully set for moderation.");
-            server.controller.moderationChannel = channelId;
-        }
+        source.getChannel().sendMessage(message).queue();
+        if (moderationChannel.getIdLong() != source.getChannel().getIdLong())
+            moderationChannel.sendMessage(message).queue();
     }
 
-    private void setAutoban(MessageReceivedEvent message, String params) {
-        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(message.getGuild()));
+    private static int setChannel(MessageCommandSource source, MessageChannel channel) {
+        assert source.getGuild() != null;
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(source.getGuild()));
 
-        if(server.controller.moderationChannel == null || server.controller.moderationChannel.isEmpty()) {
-            Log.print(message.getTextChannel(), "This command requires a moderation channel. Use [monkey mod setChannel <#channel>].");
-        }
+        server.controller.moderationChannel = channel.getId();
+        if (source.getChannel().getIdLong() != channel.getIdLong())
+            source.getChannel().sendMessage("That channel was successfully set for moderation.").queue();
+        channel.sendMessage("This channel was successfully set for moderation.").queue();
 
-        TextChannel moderationChannel = message.getGuild().getTextChannelById(StrUtils.getChannelId(server.controller.moderationChannel));
-        params = params.toLowerCase();
-
-        if(params.equals("false")) {
-            server.controller.autoban = false;
-            Log.print(moderationChannel, "Autoban has been updated to false.");
-        } else if(params.equals("true")) {
-            server.controller.autoban = true;
-            Log.print(moderationChannel, "Autoban has been updated to true.");
-        } else {
-            Log.print(moderationChannel, "Unknown argument \"" + params + "\".");
-        }
+        return 0;
     }
 
-    private void setBanMessage(MessageReceivedEvent message, String params) {
-        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(message.getGuild()));
+    private static int setAutoban(MessageCommandSource source, boolean value) {
+        assert source.getGuild() != null;
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(source.getGuild()));
 
-        if(server.controller.moderationChannel == null || server.controller.moderationChannel.isEmpty()) {
-            Log.print(message.getTextChannel(), "This command requires a moderation channel. Use [monkey mod setChannel <#channel>].");
-        }
+        server.controller.autoban = value;
+        sendModerationFeedback(source, "Autoban has been updated to " + value);
 
-        TextChannel moderationChannel = message.getGuild().getTextChannelById(StrUtils.getChannelId(server.controller.moderationChannel));
-        params = params.toLowerCase();
-
-        if(params.equals("false")) {
-            server.controller.banMessage = false;
-            Log.print(moderationChannel, "Public ban messages will not be displayed.");
-        } else if(params.equals("true")) {
-            server.controller.banMessage = true;
-            Log.print(moderationChannel, "Public ban messages will be displayed.");
-        } else {
-            Log.print(moderationChannel, "Unknown argument \"" + params + "\".");
-        }
+        return 0;
     }
 
-    private void setSendAlert(MessageReceivedEvent message, String params) {
-        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(message.getGuild()));
+    private static int setBanMessage(MessageCommandSource source, boolean value) {
+        assert source.getGuild() != null;
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(source.getGuild()));
 
-        if(server.controller.moderationChannel == null || server.controller.moderationChannel.isEmpty()) {
-            Log.print(message.getTextChannel(), "This command requires a moderation channel. Use [monkey mod setChannel <#channel>].");
-        }
+        server.controller.banMessage = value;
+        sendModerationFeedback(source, value ? "Public ban messages will be displayed." : "Public ban messages will not be displayed.");
 
-        TextChannel moderationChannel = message.getGuild().getTextChannelById(StrUtils.getChannelId(server.controller.moderationChannel));
-        params = params.toLowerCase();
-
-        if(params.equals("false")) {
-            server.controller.sendAlert = false;
-            Log.print(moderationChannel, "This server won't be sending nor getting spam alerts from other discords.");
-        } else if(params.equals("true")) {
-            server.controller.sendAlert = true;
-            Log.print(moderationChannel, "This server will be sending and getting spam alerts from other discords.");
-        } else {
-            Log.print(moderationChannel, "Unknown argument \"" + params + "\".");
-        }
+        return 0;
     }
 
-    private void setFunCommands(MessageReceivedEvent message, String params) {
-        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(message.getGuild()));
+    private static int setSendAlert(MessageCommandSource source, boolean value) {
+        assert source.getGuild() != null;
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(source.getGuild()));
 
-        if(server.controller.moderationChannel == null || server.controller.moderationChannel.isEmpty()) {
-            Log.print(message.getTextChannel(), "This command requires a moderation channel. Use [monkey mod setChannel <#channel>].");
-        }
+        server.controller.sendAlert = value;
+        if (value)
+            sendModerationFeedback(source, "This server will be sending and receiving spam alerts from other discords.");
+        else
+            sendModerationFeedback(source, "This server won't be sending nor receiving spam alerts from other discords.");
 
-        TextChannel moderationChannel = message.getGuild().getTextChannelById(StrUtils.getChannelId(server.controller.moderationChannel));
-        params = params.toLowerCase();
-
-        if(params.equals("false")) {
-            server.controller.funCommands = false;
-            Log.print(moderationChannel, "Disabled fun commands.");
-        } else if(params.equals("true")) {
-            server.controller.funCommands = true;
-            Log.print(moderationChannel, "Enabled fun commands.");
-        } else {
-            Log.print(moderationChannel, "Unknown argument \"" + params + "\".");
-        }
+        return 0;
     }
 
-    private void setLimit(MessageReceivedEvent message, String params) {
-        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(message.getGuild()));
+    private static int setFunCommands(MessageCommandSource source, boolean value) {
+        assert source.getGuild() != null;
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(source.getGuild()));
 
-        if(server.controller.moderationChannel == null || server.controller.moderationChannel.isEmpty()) {
-            Log.print(message.getTextChannel(), "This command requires a moderation channel. Use [monkey mod setChannel <#channel>].");
-        }
+        server.controller.funCommands = value;
+        sendModerationFeedback(source, value ? "Enabled fun commands." : "Disabled fun commands.");
 
-        TextChannel moderationChannel = message.getGuild().getTextChannelById(StrUtils.getChannelId(server.controller.moderationChannel));
-
-        List<String> rawLimits = Arrays.asList(params.split(" "));
-
-        String roleId = null;
-        int[] limits;
-
-        if(rawLimits.size() == 4) {
-            try {
-                limits = rawLimits.stream().mapToInt(Integer::parseInt).toArray();
-            } catch(Exception e) {
-                Log.print(message.getTextChannel(), "Ping limit must be a valid integer.");
-                return;
-            }
-
-            server.controller.setRole(null, limits);
-        } else if(rawLimits.size() == 5) {
-            roleId = rawLimits.get(0);
-
-            try {
-                limits = rawLimits.subList(1, rawLimits.size()).stream().mapToInt(Integer::parseInt).toArray();
-            } catch(Exception e) {
-                Log.print(message.getTextChannel(), "Ping limit must be a valid integer.");
-                return;
-            }
-
-            Role role = server.getGuild().getRoleById(roleId.replaceFirst("<@&", "").replaceFirst(">", ""));
-
-            if(role == null) {
-                Log.print(message.getTextChannel(), "The role you specified is invalid.");
-                return;
-            }
-
-            server.controller.setRole(role, limits);
-        } else {
-            Log.print(message.getTextChannel(), "Invalid command arguments.");
-            return;
-        }
-
-        Log.print(moderationChannel, "Updated role limits successfully.");
+        return 0;
     }
 
-    private void setYunDefense(MessageReceivedEvent message, String params) {
-        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(message.getGuild()));
+    private static int setLimits(MessageCommandSource source, @Nullable Role role, int everyoneLimit, int hereLimit, int roleLimit, int userLimit) {
+        assert source.getGuild() != null;
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(source.getGuild()));
 
-        if(server.controller.moderationChannel == null || server.controller.moderationChannel.isEmpty()) {
-            Log.print(message.getTextChannel(), "This command requires a moderation channel. Use [monkey mod setChannel <#channel>].");
-        }
+        server.controller.setRole(role, new int[] {everyoneLimit, hereLimit, roleLimit, userLimit});
+        sendModerationFeedback(source, "Updated role limits successfully.");
 
-        TextChannel moderationChannel = message.getGuild().getTextChannelById(StrUtils.getChannelId(server.controller.moderationChannel));
-        params = params.toLowerCase();
-
-        if(params.equals("false")) {
-            server.controller.yunDefense = false;
-            Log.print(moderationChannel, "Disabled Yun defense.");
-        } else if(params.equals("true")) {
-            server.controller.yunDefense = true;
-            Log.print(moderationChannel, "Enabled Yun defense.");
-        } else {
-            Log.print(moderationChannel, "Unknown argument \"" + params + "\".");
-        }
+        return 0;
     }
 
-    private void unautoban(MessageReceivedEvent message, String params) {
-        if (!MonkeyBot.instance().config.botAdmins.contains(message.getAuthor().getId())) {
-            message.getChannel().sendMessage("Only bot admins can use this command").queue();
-            return;
-        }
+    private static int setYunDefense(MessageCommandSource source, boolean value) {
+        assert source.getGuild() != null;
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(source.getGuild()));
 
-        String[] args = params.split(" ");
-        long userId;
-        try {
-            userId = Long.parseLong(args[0]);
-        } catch (NumberFormatException e) {
-            message.getChannel().sendMessage("Invalid user ID").queue();
-            return;
-        }
+        server.controller.yunDefense = value;
+        sendModerationFeedback(source, value ? "Enabled Yun defense." : "Disabled Yun defense.");
 
+        return 0;
+    }
+
+    private static int unautoban(MessageCommandSource source, long userId, @Nullable String reason) {
         UserInfo user = MonkeyBot.instance().config.getOrCreateUser(userId);
         if (user.autobannedServers.isEmpty()) {
-            message.getChannel().sendMessage("That user wasn't autobanned by Monkey").queue();
-            return;
+            source.getChannel().sendMessage("That user wasn't autobanned by Monkey").queue();
+            return 0;
         }
-        AtomicBoolean hasApologized = new AtomicBoolean(false);
 
-        String reason = Arrays.stream(args).skip(1).collect(Collectors.joining(" "));
+        AtomicBoolean hasApologized = new AtomicBoolean(false);
 
         for (String serverId : user.autobannedServers) {
             Guild guild = MonkeyBot.instance().jda.getGuildById(serverId);
@@ -262,11 +192,12 @@ public class CommandMod extends Command {
                 if (holder.controller.moderationChannel != null && !holder.controller.moderationChannel.isEmpty()) {
                     TextChannel moderationChannel = guild.getTextChannelById(holder.controller.moderationChannel);
                     if (moderationChannel != null) {
+                        assert source.getGuild() != null;
                         moderationChannel.sendMessage(
                                 String.format("User %s#%s was un-autobanned by %s in %s%s",
                                         ban.getUser().getName(), ban.getUser().getDiscriminator(),
-                                        message.getAuthor().getName(),
-                                        message.getGuild().getName(),
+                                        source.getUser().getName(),
+                                        source.getGuild().getName(),
                                         reason == null ? "" : (". Reason: " + reason)))
                                 .queue();
                     }
@@ -274,11 +205,13 @@ public class CommandMod extends Command {
             }, t -> {});
         }
 
+        int count = user.autobannedServers.size();
         user.autobannedServers.clear();
+        return count;
     }
 
-    private void broadcast(MessageReceivedEvent message, String params) {
-        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(message.getGuild()));
+    private static int broadcast(MessageCommandSource source, String message) {
+        assert source.getGuild() != null;
 
         for(HolderGuild s: Guilds.instance().servers) {
             if(s.controller.moderationChannel != null && s.controller.sendAlert) {
@@ -286,29 +219,15 @@ public class CommandMod extends Command {
 
                 if(moderationChannel != null) {
                     String broadcastMessage = "====== **[BROADCAST]** ";
-                    broadcastMessage += "<@" + message.getMember().getIdLong() + ">";
-                    broadcastMessage += " from **" + message.getGuild().getName() + "** ======\n";
-                    broadcastMessage += params;
+                    broadcastMessage += "<@" + source.getUser().getIdLong() + ">";
+                    broadcastMessage += " from **" + source.getGuild().getName() + "** ======\n";
+                    broadcastMessage += message;
                     Log.print(moderationChannel, broadcastMessage);
                 }
             }
         }
-    }
 
-    @Override
-    public String[] getCommandDesc() {
-        return new String[] {
-                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "setChannel <#channel> ` : Sets the moderation channel. Will be used to print logs.",
-                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "autoban <flag> ` : Should the user be automatically banned if he spams? Note that you will always be notified in the moderation channel if a user spams.",
-                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "banMessage <flag> ` : If on, this will print a custom ban message in the target channel whenever someone gets banned from spamming.",
-                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "sendAlert <flag> ` : If on, spam alerts will be sent to and from other discords.",
-                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "funCommands <flag> ` : If on, general fun commands will be enabled. Note that some of them are trollish and may cause issues.",
-                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "limit <everyone> <here> <role> <user> ` : Sets the limit of everyone, here, role and user pings for users without a role.",
-                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "limit <@&role> <everyone> <here> <role> <user> ` : Sets the limit of everyone, here, role and user pings for the specified role.",
-                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "yunDefense <flag> ` : If on, I'm jokes will be made against Yun. BRING HIM DOWN!",
-                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "unautoban <user-id> [reason] `: Reverse a Monkey autoban. Can only unban users banned via a Monkey autoban. Bot admin only",
-                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "broadcast [message] `: Broadcast a message to all moderation channels on all active discords. Use sparingly."
-        };
+        return 0;
     }
 
 }

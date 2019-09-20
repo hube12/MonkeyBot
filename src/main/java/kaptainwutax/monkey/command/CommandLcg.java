@@ -1,80 +1,53 @@
 package kaptainwutax.monkey.command;
 
-import kaptainwutax.monkey.holder.HolderGuild;
+import com.mojang.brigadier.CommandDispatcher;
 import kaptainwutax.monkey.init.Commands;
-import kaptainwutax.monkey.init.Guilds;
-import kaptainwutax.monkey.utility.Log;
-import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
-public class CommandLcg extends Command {
+import static kaptainwutax.monkey.command.arguments.MultibaseLongArgumentType.*;
+import static kaptainwutax.monkey.init.Commands.*;
+
+public class CommandLcg {
 
     private static final long MULTIPLIER = 0x5deece66dL;
     private static final long ADDEND = 0xbL;
     private static final long MASK = 0xffffffffffffL;
 
-    public CommandLcg(String[] prefix) {
-        super(prefix);
+    public static void register(CommandDispatcher<MessageCommandSource> dispatcher) {
+        dispatcher.register(literal("lcg", "Prints the constants for the Java LCG")
+            .requires(MessageCommandSource::canUseFunCommands)
+            .executes(ctx -> printDefaultLCGConstants(ctx.getSource()))
+            .then(literal("combine", "Prints the LCG equivalent to calling the Java LCG *n* times")
+                .then(argument("n", multibaseLong())
+                    .executes(ctx -> combine(ctx.getSource(), getMultibaseLong(ctx, "n")))))
+            .then(literal("next", "Prints the seed *n* seeds after *seed* in the Java LCG")
+                .then(argument("seed", multibaseLong())
+                    .executes(ctx -> next(ctx.getSource(), getMultibaseLong(ctx, "seed"), 1))
+                    .then(argument("n", multibaseLong())
+                        .executes(ctx -> next(ctx.getSource(), getMultibaseLong(ctx, "seed"), getMultibaseLong(ctx, "n"))))))
+            .then(literal("previous", "Prints the seed *n* seeds before *seed* in the Java LCG. Equivalent to `next <seed> -n`")
+                .then(argument("seed", multibaseLong())
+                    .executes(ctx -> next(ctx.getSource(), getMultibaseLong(ctx, "seed"), -1))
+                    .then(argument("n", multibaseLong())
+                        .executes(ctx -> next(ctx.getSource(), getMultibaseLong(ctx, "seed"), -getMultibaseLong(ctx, "n")))))));
     }
 
-    @Override
-    public void processCommand(MessageReceivedEvent message, String rawCommand) {
-        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(message.getGuild()));
-        if (!server.controller.funCommands && !message.getMember().hasPermission(Permission.ADMINISTRATOR))
-            return;
-        
-        rawCommand = removePrefix(rawCommand);
-        String[] params = rawCommand.split(" ");
-
-        if (params.length == 1 && params[0].isEmpty()) {
-
-            Log.print(message.getTextChannel(), formatLCGConstants(MULTIPLIER, ADDEND));
-
-        } else if (params[0].equals("combine")) {
-
-            long n;
-            try {
-                n = parseSeed(params[1]);
-            } catch (NumberFormatException e) {
-                Log.print(message.getTextChannel(), "Not a number");
-                return;
-            }
-
-            LCG lcg = combine(n);
-
-            Log.print(message.getTextChannel(), formatLCGConstants(lcg.multiplier, lcg.addend));
-
-        } else if (params[0].equals("next") || params[0].equals("previous")) {
-
-            long seed;
-            long n;
-            try {
-                seed = parseSeed(params[1]);
-                n = params.length > 2 ? parseSeed(params[2]) : 1;
-            } catch (NumberFormatException e) {
-                Log.print(message.getTextChannel(), "Not a number");
-                return;
-            }
-
-            LCG lcg = combine(params[0].equals("next") ? n : -n);
-
-            seed = seed * lcg.multiplier + lcg.addend;
-            seed &= MASK;
-
-            Log.print(message.getTextChannel(), formatHexDec(seed));
-
-        }
+    private static int printDefaultLCGConstants(MessageCommandSource source) {
+        source.getChannel().sendMessage(formatLCGConstants(MULTIPLIER, ADDEND)).queue();
+        return 0;
     }
 
-    @Override
-    public String[] getCommandDesc() {
-        final String PREFIX = Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc();
-        return new String[] {
-                "`" + PREFIX + "`: prints the constants for the Java LCG",
-                "`" + PREFIX + "combine <n>`: prints the LCG equivalent to calling the Java LCG *n* times",
-                "`" + PREFIX + "next <seed> [n=1]`: prints the seed *n* seeds after *seed* in the Java LCG",
-                "`" + PREFIX + "previous <seed> [n=1]`: prints the seed *n* seeds before *seed* in the Java LCG. Equivalent to `" + PREFIX + "next <seed> -n`"
-        };
+    private static int combine(MessageCommandSource source, long n) {
+        LCG lcg = combine(n);
+        source.getChannel().sendMessage(formatLCGConstants(lcg.multiplier, lcg.addend)).queue();
+        return 0;
+    }
+
+    private static int next(MessageCommandSource source, long seed, long n) {
+        LCG lcg = combine(n);
+        seed = seed * lcg.multiplier + lcg.addend;
+        seed &= MASK;
+        source.getChannel().sendMessage(formatHexDec(seed)).queue();
+        return 0;
     }
 
     private static String formatLCGConstants(long multiplier, long addend) {

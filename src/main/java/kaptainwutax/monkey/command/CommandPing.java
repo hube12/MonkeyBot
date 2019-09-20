@@ -1,30 +1,20 @@
 package kaptainwutax.monkey.command;
 
-import kaptainwutax.monkey.holder.HolderGuild;
-import kaptainwutax.monkey.init.Commands;
-import kaptainwutax.monkey.init.Guilds;
-import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import com.mojang.brigadier.CommandDispatcher;
 
-public class CommandPing extends Command {
+import static kaptainwutax.monkey.init.Commands.*;
 
-    public CommandPing(String[] prefix) {
-        super(prefix);
+public class CommandPing {
+
+    public static void register(CommandDispatcher<MessageCommandSource> dispatcher) {
+        dispatcher.register(literal("ping", "Ping pong...")
+            .requires(MessageCommandSource::canUseFunCommands)
+            .executes(ctx -> ping(ctx.getSource())));
     }
 
-    @Override
-    public void processCommand(MessageReceivedEvent message, String rawCommand) {
-        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(message.getGuild()));
-        if(!server.controller.funCommands && !message.getMember().hasPermission(Permission.ADMINISTRATOR))return;
-
-        message.getChannel().sendMessage("Pong!").queue();
-    }
-
-    @Override
-    public String[] getCommandDesc() {
-        return new String[] {
-                "`" + Commands.MONKEY.getPrefixDesc() + this.getPrefixDesc() + "` : Ping pong..."
-        };
+    private static int ping(MessageCommandSource source) {
+        source.getChannel().sendMessage("Pong!").queue();
+        return 0;
     }
 
 }
