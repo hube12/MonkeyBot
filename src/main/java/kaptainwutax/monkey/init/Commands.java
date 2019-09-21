@@ -1,43 +1,61 @@
 package kaptainwutax.monkey.init;
 
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.ArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
+import com.mojang.brigadier.tree.LiteralCommandNode;
 import kaptainwutax.monkey.command.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import javax.annotation.Nullable;
+import java.util.IdentityHashMap;
+import java.util.Map;
 
 public class Commands {
 
-    public static List<Command> COMMANDS = new ArrayList<Command>();
+    private static Map<LiteralCommandNode<MessageCommandSource>, String> COMMAND_HELP = new IdentityHashMap<>();
 
-    public static Command MONKEY = new CommandMonkey();
-    public static Command HELP = new CommandHelp(new String[] {"help"});
-
-    public static Command PING = new CommandPing(new String[] {"ping", "\uD83C\uDFD3"});
-    public static Command SAY = new CommandSay(new String[] {"say"});
-    public static Command CACTUS = new CommandCactus(new String[] {"cactus"});
-    public static Command STRONGHOLD = new CommandStronghold(new String[] {"stronghold"});
-    public static Command LCG = new CommandLcg(new String[] {"lcg"});
-
-    public static Command SUMMARY = new CommandSummary(new String[] {"summary"});
-    public static Command MOD = new CommandMod(new String[] {"mod"});
-
-    public static Command SHUTDOWN = new CommandShutdown(new String[] {"shutdown"});
-
-    public static void registerCommand(Command command) {
-        if(!COMMANDS.contains(command)) COMMANDS.add(command);
+    public static void registerCommands(CommandDispatcher<MessageCommandSource> dispatcher) {
+        COMMAND_HELP.clear();
+        CommandHelp.register(dispatcher);
+        CommandPing.register(dispatcher);
+        CommandSay.register(dispatcher);
+        CommandCactus.register(dispatcher);
+        CommandStronghold.register(dispatcher);
+        CommandLcg.register(dispatcher);
+        CommandSummary.register(dispatcher);
+        CommandMod.register(dispatcher);
+        CommandShutdown.register(dispatcher);
     }
 
-    public static void registerCommands() {
-        registerCommand(MONKEY);
-        registerCommand(HELP);
-        registerCommand(PING);
-        registerCommand(SAY);
-        registerCommand(CACTUS);
-        registerCommand(STRONGHOLD);
-        registerCommand(LCG);
-        registerCommand(SUMMARY);
-        registerCommand(MOD);
-        registerCommand(SHUTDOWN);
+    /**
+     * Convenience method to help with generics
+     */
+    public static LiteralArgumentBuilder<MessageCommandSource> literal(String literal) {
+        return LiteralArgumentBuilder.literal(literal);
+    }
+
+    public static LiteralArgumentBuilder<MessageCommandSource> literal(String literal, String help) {
+        return new LiteralArgumentBuilder<MessageCommandSource>(literal) {
+            @Override
+            public LiteralCommandNode<MessageCommandSource> build() {
+                LiteralCommandNode<MessageCommandSource> ret = super.build();
+                COMMAND_HELP.put(ret, help);
+                return ret;
+            }
+        };
+    }
+
+    /**
+     * Convenience method to help with generics
+     */
+    public static <T> RequiredArgumentBuilder<MessageCommandSource, T> argument(String name, ArgumentType<T> type) {
+        return RequiredArgumentBuilder.argument(name, type);
+    }
+
+    @Nullable
+    public static String getHelp(LiteralCommandNode<MessageCommandSource> commandNode) {
+        return COMMAND_HELP.get(commandNode);
     }
 
 }

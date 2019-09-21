@@ -14,7 +14,7 @@ public class HolderChannel {
     }
 
     public String getId() {
-        return this.id;
+        return StrUtils.getChannelId(this.id);
     }
 
     public String getIdAsMessage() {

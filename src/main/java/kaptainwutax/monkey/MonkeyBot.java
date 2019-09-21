@@ -1,5 +1,8 @@
 package kaptainwutax.monkey;
 
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import kaptainwutax.monkey.command.MessageCommandSource;
 import kaptainwutax.monkey.holder.HolderGuild;
 import kaptainwutax.monkey.init.Commands;
 import kaptainwutax.monkey.init.Guilds;
@@ -27,6 +30,7 @@ public class MonkeyBot extends ListenerAdapter {
     private static MonkeyBot instance;
     public MonkeyConfig config;
     public JDA jda;
+    public CommandDispatcher<MessageCommandSource> dispatcher;
 
     public MonkeyBot() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -82,8 +86,10 @@ public class MonkeyBot extends ListenerAdapter {
         builder.setToken(monkeyBot.config.token);
         builder.addEventListeners(instance());
         monkeyBot.jda = builder.build();
-
-        Commands.registerCommands();
+        monkeyBot.dispatcher = new CommandDispatcher<>();
+        Commands.registerCommands(monkeyBot.dispatcher);
+        monkeyBot.dispatcher.findAmbiguities(((parent, child, sibling, inputs) ->
+                System.err.println("Ambiguity detected between " + monkeyBot.dispatcher.getPath(child) + " and " + monkeyBot.dispatcher.getPath(sibling) + " for inputs " + inputs)));
     }
 
     @Override
@@ -99,16 +105,33 @@ public class MonkeyBot extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
-        if(event.getChannel().getType() != ChannelType.TEXT)return;
-        if(event.getAuthor().isBot())return;
+        if (event.getAuthor().isBot()) return;
 
         String messageContent = event.getMessage().getContentRaw();
 
-        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(event.getGuild()));
-        if(server != null)server.controller.sanitize(event);
+        // Interpret every DM from users as a command, otherwise require prefix
+        boolean prefixPresent = false;
 
-        if(Commands.MONKEY.isCommand(messageContent)) {
-            Commands.MONKEY.processCommand(event, messageContent);
+        // Remove "monkey" prefix if it is present
+        for (String prefix : config.commandPrefix) {
+            if (messageContent.startsWith(prefix + " ")) {
+                messageContent = messageContent.substring(prefix.length() + 1);
+                prefixPresent = true;
+                break;
+            }
+        }
+
+        if (prefixPresent || event.getChannelType() == ChannelType.PRIVATE) {
+            try {
+                dispatcher.execute(messageContent, new MessageCommandSource(event));
+            } catch (CommandSyntaxException e) {
+                event.getChannel().sendMessage("Error").queue(msg -> msg.editMessage(e.getMessage()).queue());
+            }
+        }
+
+        if (event.getChannelType() == ChannelType.TEXT) {
+            HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(event.getGuild()));
+            if (server != null) server.controller.sanitize(event);
         }
     }
 
