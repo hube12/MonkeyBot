@@ -7,9 +7,10 @@ import static kaptainwutax.monkey.init.Commands.*;
 public class CommandPing {
 
     public static void register(CommandDispatcher<MessageCommandSource> dispatcher) {
-        dispatcher.register(literal("ping", "Ping pong...")
-            .requires(MessageCommandSource::canUseFunCommands)
-            .executes(ctx -> ping(ctx.getSource())));
+        for (String command : new String[] {"ping", "\uD83C\uDFD3"})
+            dispatcher.register(literal(command, "Ping pong...")
+                .requires(MessageCommandSource::canUseFunCommands)
+                .executes(ctx -> ping(ctx.getSource())));
     }
 
     private static int ping(MessageCommandSource source) {
