@@ -6,7 +6,8 @@ import kaptainwutax.monkey.command.CommandMod;
 import kaptainwutax.monkey.init.Guilds;
 import kaptainwutax.monkey.utility.*;
 import net.dv8tion.jda.api.entities.*;
-import net.dv8tion.jda.api.events.channel.category.CategoryCreateEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberLeaveEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 import javax.annotation.Nullable;
@@ -39,6 +40,8 @@ public class HolderController {
 
     @Expose @Nullable public String muteRoleId;
     @Expose public boolean autoManageMuteRole = false;
+    // Users which had the mute role but left the discord
+    @Expose public Set<String> leftMutedMembers = new HashSet<>(0);
 
     private transient PingInfo everyonePingInfo = new PingInfo();
     private transient PingInfo herePingInfo = new PingInfo();
@@ -68,6 +71,33 @@ public class HolderController {
 
         if (moderationChannel == null) return;
         moderationChannel.sendMessage("Added mute role overrides to new channel " + channel.getName()).queue();
+    }
+
+    public void onMemberJoin(GuildMemberJoinEvent event) {
+        if (autoManageMuteRole && muteRoleId != null && leftMutedMembers.remove(event.getMember().getId())) {
+            Role muteRole = event.getGuild().getRoleById(muteRoleId);
+            if (muteRole != null) {
+                event.getGuild().getController().addSingleRoleToMember(event.getMember(), muteRole).queue(n -> {
+                    if (moderationChannel != null) {
+                        TextChannel moderationChannel = event.getGuild().getTextChannelById(this.moderationChannel);
+                        if (moderationChannel != null) {
+                            moderationChannel.sendMessage("Given back " + muteRole.getName() + " role to user " + event.getUser().getName() + "#" + event.getUser().getDiscriminator() + " as they had the role when they last left.").queue();
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    public void onMemberLeave(GuildMemberLeaveEvent event) {
+        if (autoManageMuteRole && muteRoleId != null) {
+            Role muteRole = event.getGuild().getRoleById(muteRoleId);
+            if (muteRole != null) {
+                if (event.getMember().getRoles().contains(muteRole)) {
+                    leftMutedMembers.add(event.getMember().getId());
+                }
+            }
+        }
     }
 
     public void setRole(Role role, int[] limits) {

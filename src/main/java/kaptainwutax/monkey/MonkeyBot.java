@@ -17,6 +17,8 @@ import net.dv8tion.jda.api.events.ShutdownEvent;
 import net.dv8tion.jda.api.events.channel.category.CategoryCreateEvent;
 import net.dv8tion.jda.api.events.channel.text.TextChannelCreateEvent;
 import net.dv8tion.jda.api.events.channel.voice.VoiceChannelCreateEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberLeaveEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
@@ -151,6 +153,18 @@ public class MonkeyBot extends ListenerAdapter {
     public void onVoiceChannelCreate(@Nonnull VoiceChannelCreateEvent event) {
         HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(event.getGuild()));
         server.controller.onChannelCreate(event.getGuild(), event.getChannel());
+    }
+
+    @Override
+    public void onGuildMemberJoin(@Nonnull GuildMemberJoinEvent event) {
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(event.getGuild()));
+        server.controller.onMemberJoin(event);
+    }
+
+    @Override
+    public void onGuildMemberLeave(@Nonnull GuildMemberLeaveEvent event) {
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(event.getGuild()));
+        server.controller.onMemberLeave(event);
     }
 
     @Override
