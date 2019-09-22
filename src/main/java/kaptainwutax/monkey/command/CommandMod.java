@@ -7,13 +7,14 @@ import kaptainwutax.monkey.holder.UserInfo;
 import kaptainwutax.monkey.init.Guilds;
 import kaptainwutax.monkey.utility.Log;
 import kaptainwutax.monkey.utility.StrUtils;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.entities.Role;
-import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 
 import javax.annotation.Nullable;
+import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 import static com.mojang.brigadier.arguments.BoolArgumentType.*;
 import static com.mojang.brigadier.arguments.IntegerArgumentType.*;
@@ -68,7 +69,19 @@ public class CommandMod {
                         .executes(ctx -> unautoban(ctx.getSource(), getLong(ctx, "userId"), getString(ctx, "reason"))))))
             .then(literal("broadcast", "Broadcast a message to all moderation channels on all active discords. Use sparingly.")
                 .then(argument("message", greedyString())
-                    .executes(ctx -> broadcast(ctx.getSource(), getString(ctx, "message"))))));
+                    .executes(ctx -> broadcast(ctx.getSource(), getString(ctx, "message")))))
+            .then(literal("mute", "Commands to handle the mute role.")
+                .requires(CommandMod::hasModerationChannel)
+                .then(literal("setRole", "Sets the mute role to an existing role on the server.")
+                    .then(argument("value", role())
+                        .executes(ctx -> setMuteRole(ctx.getSource(), getRole(ctx, "value")))))
+                .then(literal("unsetRole", "Sets the server to have no mute role (or at least, none Monkey knows about).")
+                    .executes(ctx -> unsetMuteRole(ctx.getSource())))
+                .then(literal("automanage", "Sets whether Monkey should auto-manage the mute role.")
+                    .then(argument("value", bool())
+                        .executes(ctx -> setAutomanageMuteRole(ctx.getSource(), getBool(ctx, "value")))))
+                .then(literal("setupRole", "Creates a mute role and sets it up to do its job. The mute role will be auto-managed unless configured otherwise.")
+                    .executes(ctx -> setupMuteRole(ctx.getSource())))));
     }
 
     private static boolean hasModerationChannel(MessageCommandSource source) {
@@ -104,6 +117,9 @@ public class CommandMod {
     }
 
     private static int setAutoban(MessageCommandSource source, boolean value) {
+        if (!source.checkBotPerms("Ban Members", Permission.BAN_MEMBERS))
+            return 0;
+
         assert source.getGuild() != null;
         HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(source.getGuild()));
 
@@ -114,6 +130,9 @@ public class CommandMod {
     }
 
     private static int setBanMessage(MessageCommandSource source, boolean value) {
+        if (!source.checkBotPerms("Ban Members", Permission.BAN_MEMBERS))
+            return 0;
+
         assert source.getGuild() != null;
         HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(source.getGuild()));
 
@@ -124,6 +143,9 @@ public class CommandMod {
     }
 
     private static int setSendAlert(MessageCommandSource source, boolean value) {
+        if (!source.checkBotPerms("Ban Members", Permission.BAN_MEMBERS))
+            return 0;
+
         assert source.getGuild() != null;
         HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(source.getGuild()));
 
@@ -147,6 +169,9 @@ public class CommandMod {
     }
 
     private static int setLimits(MessageCommandSource source, @Nullable Role role, int everyoneLimit, int hereLimit, int roleLimit, int userLimit) {
+        if (!source.checkBotPerms("Ban Members", Permission.BAN_MEMBERS))
+            return 0;
+
         assert source.getGuild() != null;
         HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(source.getGuild()));
 
@@ -228,6 +253,81 @@ public class CommandMod {
         }
 
         return 0;
+    }
+
+    private static int setMuteRole(MessageCommandSource source, Role role) {
+        if (!source.checkBotPerms("Manage Roles", Permission.MANAGE_ROLES))
+            return 0;
+
+        assert source.getGuild() != null;
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(source.getGuild()));
+
+        server.controller.muteRoleId = role.getId();
+        sendModerationFeedback(source, "Mute role has been updated to " + role.getName() + ".");
+
+        return 0;
+    }
+
+    private static int unsetMuteRole(MessageCommandSource source) {
+        assert source.getGuild() != null;
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(source.getGuild()));
+
+        server.controller.muteRoleId = null;
+        sendModerationFeedback(source, "Unset the mute role.");
+
+        return 0;
+    }
+
+    private static int setAutomanageMuteRole(MessageCommandSource source, boolean value) {
+        if (!source.checkBotPerms("Manage Roles", Permission.MANAGE_ROLES))
+            return 0;
+
+        assert source.getGuild() != null;
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(source.getGuild()));
+
+        server.controller.autoManageMuteRole = value;
+        sendModerationFeedback(source, value ? "Mute role will be auto-managed." : "Mute role will not be auto-managed.");
+
+        return 0;
+    }
+
+    private static int setupMuteRole(MessageCommandSource source) {
+        if (!source.checkBotPerms("Manage Roles", Permission.MANAGE_ROLES))
+            return 0;
+
+        assert source.getGuild() != null;
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(source.getGuild()));
+
+        TextChannel moderationChannel = source.getGuild().getTextChannelById(StrUtils.getChannelId(server.controller.moderationChannel));
+        assert moderationChannel != null;
+
+        sendModerationFeedback(source, "Setting up mute role...");
+
+        source.getGuild().getController().createRole().setName("Muted").setPermissions(Collections.emptyList()).queue(muteRole -> {
+            server.controller.muteRoleId = muteRole.getId();
+            for (GuildChannel channel : source.getGuild().getChannels()) {
+                if (channel.getParent() == null || !channel.getPermissionOverrides().isEmpty())
+                    addMuteRoleToChannel(channel, muteRole, error -> moderationChannel.sendMessage(error).queue());
+            }
+
+            server.controller.autoManageMuteRole = true;
+            sendModerationFeedback(source, "Successfully set up the mute role.");
+        });
+
+        return 0;
+    }
+
+    public static void addMuteRoleToChannel(GuildChannel channel, Role muteRole, Consumer<String> errorFeedback) {
+        try {
+            if (channel.getType() == ChannelType.VOICE || channel.getType() == ChannelType.CATEGORY) {
+                channel.upsertPermissionOverride(muteRole).deny(Permission.VOICE_CONNECT).queue();
+            }
+            if (channel.getType() == ChannelType.TEXT || channel.getType() == ChannelType.CATEGORY) {
+                channel.upsertPermissionOverride(muteRole).deny(Permission.MESSAGE_WRITE, Permission.MESSAGE_ADD_REACTION).queue();
+            }
+        } catch (InsufficientPermissionException e) {
+            errorFeedback.accept("Insufficient permission " + e.getPermission() + " in channel " + channel.getName());
+        }
     }
 
 }
