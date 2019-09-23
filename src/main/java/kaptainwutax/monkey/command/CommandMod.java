@@ -1,6 +1,9 @@
 package kaptainwutax.monkey.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.LiteralMessage;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import kaptainwutax.monkey.MonkeyBot;
 import kaptainwutax.monkey.holder.HolderGuild;
 import kaptainwutax.monkey.holder.UserInfo;
@@ -27,6 +30,8 @@ import static kaptainwutax.monkey.command.arguments.UserArgumentType.*;
 import static kaptainwutax.monkey.init.Commands.*;
 
 public class CommandMod {
+
+    private static SimpleCommandExceptionType CANNOT_PUNISH_BOTS_EXCEPTION = new SimpleCommandExceptionType(new LiteralMessage("Cannot punish bots"));
 
     public static void register(CommandDispatcher<MessageCommandSource> dispatcher) {
         dispatcher.register(literal("mod", "Moderation tools for Monkey Bot.")
@@ -344,8 +349,11 @@ public class CommandMod {
         }
     }
 
-    private static int globalPunish(MessageCommandSource source, User victim, @Nullable String reason) {
+    private static int globalPunish(MessageCommandSource source, User victim, @Nullable String reason) throws CommandSyntaxException {
         assert source.getGuild() != null;
+
+        if (victim.isBot())
+            throw CANNOT_PUNISH_BOTS_EXCEPTION.create();
 
         // Ban the user in the discord the command was executed at (no checks needed)
         source.getGuild().getController().ban(victim, 0, reason).queue();
@@ -363,7 +371,7 @@ public class CommandMod {
             // Check if an admin is in the source guild
             boolean isAdminInSourceGuild = false;
             for (Member member : guild.getMembers()) {
-                if (member.hasPermission(Permission.ADMINISTRATOR)) {
+                if (member.hasPermission(Permission.ADMINISTRATOR) && !member.getUser().isBot()) {
                     if (source.getGuild().isMember(member.getUser())) {
                         isAdminInSourceGuild = true;
                         break;
