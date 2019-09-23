@@ -6,9 +6,7 @@ import kaptainwutax.monkey.command.MessageCommandSource;
 import kaptainwutax.monkey.holder.HolderGuild;
 import kaptainwutax.monkey.init.Commands;
 import kaptainwutax.monkey.init.Guilds;
-import kaptainwutax.monkey.utility.Log;
 import kaptainwutax.monkey.utility.MonkeyConfig;
-import kaptainwutax.monkey.utility.StrUtils;
 import net.dv8tion.jda.api.AccountType;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -16,6 +14,11 @@ import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.ShutdownEvent;
+import net.dv8tion.jda.api.events.channel.category.CategoryCreateEvent;
+import net.dv8tion.jda.api.events.channel.text.TextChannelCreateEvent;
+import net.dv8tion.jda.api.events.channel.voice.VoiceChannelCreateEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberLeaveEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
@@ -23,7 +26,6 @@ import javax.annotation.Nonnull;
 import javax.security.auth.login.LoginException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Scanner;
 
 public class MonkeyBot extends ListenerAdapter {
 
@@ -133,6 +135,36 @@ public class MonkeyBot extends ListenerAdapter {
             HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(event.getGuild()));
             if (server != null) server.controller.sanitize(event);
         }
+    }
+
+    @Override
+    public void onCategoryCreate(@Nonnull CategoryCreateEvent event) {
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(event.getGuild()));
+        server.controller.onChannelCreate(event.getGuild(), event.getCategory());
+    }
+
+    @Override
+    public void onTextChannelCreate(@Nonnull TextChannelCreateEvent event) {
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(event.getGuild()));
+        server.controller.onChannelCreate(event.getGuild(), event.getChannel());
+    }
+
+    @Override
+    public void onVoiceChannelCreate(@Nonnull VoiceChannelCreateEvent event) {
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(event.getGuild()));
+        server.controller.onChannelCreate(event.getGuild(), event.getChannel());
+    }
+
+    @Override
+    public void onGuildMemberJoin(@Nonnull GuildMemberJoinEvent event) {
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(event.getGuild()));
+        server.controller.onMemberJoin(event);
+    }
+
+    @Override
+    public void onGuildMemberLeave(@Nonnull GuildMemberLeaveEvent event) {
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(event.getGuild()));
+        server.controller.onMemberLeave(event);
     }
 
     @Override

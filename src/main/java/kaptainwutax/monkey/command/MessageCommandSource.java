@@ -92,4 +92,23 @@ public class MessageCommandSource {
         return holder.controller.funCommands;
     }
 
+    /**
+     * Checks if monkey bot has the given permissions. If {@code permName} is not {@code null},
+     * also sends an error message saying that monkey needs {@code permName}. Returns whether
+     * monkey has the required perms.
+     *
+     * Caution: in DMs, always returns true.
+     */
+    public boolean checkBotPerms(@Nullable String permName, Permission... requiredPermissions) {
+        if (isDMs()) return true;
+        if (event.getGuild().getSelfMember().hasPermission(requiredPermissions) || event.getGuild().getSelfMember().hasPermission(Permission.ADMINISTRATOR)) {
+            return true;
+        } else {
+            if (permName != null) {
+                event.getChannel().sendMessage("Monkey Bot needs the \"" + permName + "\" permission to perform this action.");
+            }
+            return false;
+        }
+    }
+
 }

@@ -2,13 +2,15 @@ package kaptainwutax.monkey.holder;
 
 import com.google.gson.annotations.Expose;
 import kaptainwutax.monkey.MonkeyBot;
+import kaptainwutax.monkey.command.CommandMod;
 import kaptainwutax.monkey.init.Guilds;
 import kaptainwutax.monkey.utility.*;
-import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Role;
-import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberLeaveEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 public class HolderController {
@@ -26,7 +28,7 @@ public class HolderController {
 
     public HolderGuild server;
     @Expose private String serverId;
-    @Expose public String moderationChannel = null;
+    @Expose @Nullable public String moderationChannel = null;
     @Expose public boolean autoban = false;
     @Expose public boolean banMessage = true;
     @Expose public boolean sendAlert = true;
@@ -35,6 +37,11 @@ public class HolderController {
 
     @Expose private MessageLimiter noobLimit = new MessageLimiter(-1, -1, -1,-1);
     @Expose private List<RoleMap> roleLimits = new ArrayList<RoleMap>();
+
+    @Expose @Nullable public String muteRoleId;
+    @Expose public boolean autoManageMuteRole = false;
+    // Users which had the mute role but left the discord
+    @Expose public Set<String> leftMutedMembers = new HashSet<>(0);
 
     private transient PingInfo everyonePingInfo = new PingInfo();
     private transient PingInfo herePingInfo = new PingInfo();
@@ -47,6 +54,50 @@ public class HolderController {
     public HolderController(HolderGuild server) {
         this.server = server;
         this.serverId = this.server.id;
+    }
+
+    public void onChannelCreate(Guild guild, GuildChannel channel) {
+        if (!autoManageMuteRole || muteRoleId == null) return;
+        Role muteRole = guild.getRoleById(muteRoleId);
+        if (muteRole == null) return;
+
+        if (this.moderationChannel == null) return;
+        TextChannel moderationChannel = guild.getTextChannelById(this.moderationChannel);
+
+        CommandMod.addMuteRoleToChannel(channel, muteRole, error -> {
+            if (moderationChannel != null)
+                moderationChannel.sendMessage(error).queue();
+        });
+
+        if (moderationChannel == null) return;
+        moderationChannel.sendMessage("Added mute role overrides to new channel " + channel.getName()).queue();
+    }
+
+    public void onMemberJoin(GuildMemberJoinEvent event) {
+        if (autoManageMuteRole && muteRoleId != null && leftMutedMembers.remove(event.getMember().getId())) {
+            Role muteRole = event.getGuild().getRoleById(muteRoleId);
+            if (muteRole != null) {
+                event.getGuild().getController().addSingleRoleToMember(event.getMember(), muteRole).queue(n -> {
+                    if (moderationChannel != null) {
+                        TextChannel moderationChannel = event.getGuild().getTextChannelById(this.moderationChannel);
+                        if (moderationChannel != null) {
+                            moderationChannel.sendMessage("Given back " + muteRole.getName() + " role to user " + event.getUser().getName() + "#" + event.getUser().getDiscriminator() + " as they had the role when they last left.").queue();
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    public void onMemberLeave(GuildMemberLeaveEvent event) {
+        if (autoManageMuteRole && muteRoleId != null) {
+            Role muteRole = event.getGuild().getRoleById(muteRoleId);
+            if (muteRole != null) {
+                if (event.getMember().getRoles().contains(muteRole)) {
+                    leftMutedMembers.add(event.getMember().getId());
+                }
+            }
+        }
     }
 
     public void setRole(Role role, int[] limits) {
@@ -67,6 +118,7 @@ public class HolderController {
 
     public void sanitize(MessageReceivedEvent event) {
         if (this.moderationChannel == null) return;
+        assert event.getMember() != null;
 
         // Yun Defense
         if (this.yunDefense && event.getAuthor().getIdLong() == 389507745113440291L) { // Yun's ID
@@ -97,13 +149,16 @@ public class HolderController {
         for(HolderGuild s: Guilds.instance().servers) {
             if(!s.equals(this.getServer()) && s.controller.moderationChannel != null && s.controller.sendAlert) {
                 TextChannel moderationChannel = s.getGuild().getTextChannelById(StrUtils.getChannelId(s.controller.moderationChannel));
-                Log.print(moderationChannel, "Spam alert from **" + event.getGuild().getName() + "**. User <@" + event.getMember().getIdLong() + "> has been spamming pings.");
+                if (moderationChannel != null) {
+                    Log.print(moderationChannel, "Spam alert from **" + event.getGuild().getName() + "**. User <@" + event.getAuthor().getIdLong() + "> has been spamming pings.");
 
-                if(s.controller.autoban) {
-                    Log.print(moderationChannel, "Banned <@" + event.getMember().getIdLong() + ">, please double check to make sure it wasn't a mistake.");
-                    s.getGuild().getController().ban(event.getMember(), 0, "Automatic ping ban from " + event.getGuild().getName() + ".").queue(ban -> {
-                        MonkeyBot.instance().config.getOrCreateUser(event.getMember().getIdLong()).autobannedServers.add(s.getGuild().getId());
-                    }, t -> {});
+                    if (s.controller.autoban) {
+                        Log.print(moderationChannel, "Banned <@" + event.getAuthor().getIdLong() + ">, please double check to make sure it wasn't a mistake.");
+                        s.getGuild().getController().ban(event.getMember(), 0, "Automatic ping ban from " + event.getGuild().getName() + ".").queue(ban -> {
+                            MonkeyBot.instance().config.getOrCreateUser(event.getMember().getIdLong()).autobannedServers.add(s.getGuild().getId());
+                        }, t -> {
+                        });
+                    }
                 }
             }
         }
@@ -111,16 +166,19 @@ public class HolderController {
 
     private void attemptBan(MessageReceivedEvent event, boolean force) {
         TextChannel moderationChannel = this.getServer().getGuild().getTextChannelById(StrUtils.getChannelId(this.moderationChannel));
-        Log.print(moderationChannel, "Member <@" + event.getMember().getIdLong() + "> is spamming pings in " + StrUtils.getChannelIdAsMessage(event.getChannel().getId()) + ".");
+        if (moderationChannel == null) return;
+        assert event.getMember() != null;
+        Log.print(moderationChannel, "Member <@" + event.getAuthor().getIdLong() + "> is spamming pings in " + StrUtils.getChannelIdAsMessage(event.getChannel().getId()) + ".");
         if(!force && !this.autoban)return;
         if(this.banMessage)Log.print(event.getTextChannel(), BAN_MESSAGES[new Random().nextInt(BAN_MESSAGES.length)].replaceFirst("user", "<@" + event.getMember().getId() + ">"));
-        Log.print(moderationChannel, "Banned <@" + event.getMember().getIdLong() + ">, please double check to make sure it wasn't a mistake.");
+        Log.print(moderationChannel, "Banned <@" + event.getAuthor().getIdLong() + ">, please double check to make sure it wasn't a mistake.");
         this.getServer().getGuild().getController().ban(event.getMember(), 0, "Automatic ping ban.").queue(ban -> {
             MonkeyBot.instance().config.getOrCreateUser(event.getMember().getIdLong()).autobannedServers.add(getServer().getGuild().getId());
         });
     }
 
     public boolean isConsideredSpam(MessageReceivedEvent event) {
+        assert event.getMember() != null;
         MessageLimiter messageMentions = new MessageLimiter(this.getMentions(event));
         return !messageMentions.respectsLimits(this.getLimit(event.getMember()));
     }
@@ -180,13 +238,13 @@ public class HolderController {
         int start = -1;
 
         for(int i = 0; i < s.length(); i++) {
-            String c = new String();
+            StringBuilder c = new StringBuilder();
 
             for(int j = i; j < s.length() && j < i + brackets.length(); j++) {
-                c += s.charAt(j);
+                c.append(s.charAt(j));
             }
 
-            if(c.equals(brackets)) {
+            if(c.toString().equals(brackets)) {
                 if(start == -1) {
                     start = i;
                 } else {
@@ -223,7 +281,7 @@ public class HolderController {
         return this.server;
     }
 
-    private class RoleMap {
+    private static class RoleMap {
 
         @Expose long id;
         @Expose MessageLimiter limiter = new MessageLimiter(-1, -1, -1, -1);
