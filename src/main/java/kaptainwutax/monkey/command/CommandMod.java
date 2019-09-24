@@ -31,7 +31,8 @@ import static kaptainwutax.monkey.init.Commands.*;
 
 public class CommandMod {
 
-    private static SimpleCommandExceptionType CANNOT_PUNISH_BOTS_EXCEPTION = new SimpleCommandExceptionType(new LiteralMessage("Cannot punish bots"));
+    private static final SimpleCommandExceptionType CANNOT_PUNISH_BOTS_EXCEPTION = new SimpleCommandExceptionType(new LiteralMessage("Cannot punish bots"));
+    private static final SimpleCommandExceptionType CANNOT_BLACKLIST_SELF_EXCEPTION = new SimpleCommandExceptionType(new LiteralMessage("Cannot blacklist your own server"));
 
     public static void register(CommandDispatcher<MessageCommandSource> dispatcher) {
         dispatcher.register(literal("mod", "Moderation tools for Monkey Bot.")
@@ -97,10 +98,10 @@ public class CommandMod {
             .then(literal("serverBlacklist", "Commands to manage the server blacklist, which restricts global punishments from the discords on the blacklist from affecting your discord.")
                 .requires(CommandMod::hasModerationChannel)
                 .then(literal("add", "Adds a server to your server blacklist.")
-                    .then(argument("guild", guild())
+                    .then(argument("guild", greedyGuild())
                         .executes(ctx -> addServerToBlacklist(ctx.getSource(), getGuild(ctx, "guild")))))
                 .then(literal("remove", "Removes a server from your server blacklist.")
-                    .then(argument("guild", guild())
+                    .then(argument("guild", greedyGuild())
                         .executes(ctx -> removeServerFromBlacklist(ctx.getSource(), getGuild(ctx, "guild")))))));
     }
 
@@ -359,6 +360,8 @@ public class CommandMod {
         source.getGuild().getController().ban(victim, 0, reason).queue();
 
         for (HolderGuild server : Guilds.instance().servers) {
+            if (server.id.equals(source.getGuild().getId())) continue;
+
             // Check if monkey is still in the server
             Guild guild = MonkeyBot.instance().jda.getGuildById(server.id);
             if (guild == null) continue;
@@ -414,8 +417,10 @@ public class CommandMod {
         return 0;
     }
 
-    private static int addServerToBlacklist(MessageCommandSource source, Guild guild) {
+    private static int addServerToBlacklist(MessageCommandSource source, Guild guild) throws CommandSyntaxException {
         assert source.getGuild() != null;
+        if (source.getGuild().equals(guild))
+            throw CANNOT_BLACKLIST_SELF_EXCEPTION.create();
         HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(source.getGuild()));
 
         server.controller.serverBlacklist.add(guild.getId());

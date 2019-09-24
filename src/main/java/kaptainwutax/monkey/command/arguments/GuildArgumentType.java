@@ -17,10 +17,18 @@ public class GuildArgumentType implements ArgumentType<GuildArgumentType.GuildGe
 
     private static final Collection<String> EXAMPLES = Arrays.asList("word", "123");
 
-    private GuildArgumentType() {}
+    private final boolean greedy;
+
+    private GuildArgumentType(boolean greedy) {
+        this.greedy = greedy;
+    }
+
+    public static GuildArgumentType greedyGuild() {
+        return new GuildArgumentType(true);
+    }
 
     public static GuildArgumentType guild() {
-        return new GuildArgumentType();
+        return new GuildArgumentType(false);
     }
 
     public static <S> GuildGetter getGuildGetter(CommandContext<S> context, String argName) {
@@ -32,15 +40,20 @@ public class GuildArgumentType implements ArgumentType<GuildArgumentType.GuildGe
     }
 
     @Override
-    public GuildGetter parse(StringReader reader) {
+    public GuildGetter parse(StringReader reader) throws CommandSyntaxException {
         int start = reader.getCursor();
         try {
             long guildId = reader.readLong();
             return source -> getGuildById(source, guildId);
         } catch (CommandSyntaxException e) {
             reader.setCursor(start);
-            String guildName = reader.getRemaining();
-            reader.setCursor(reader.getTotalLength());
+            String guildName;
+            if (greedy) {
+                guildName = reader.getRemaining();
+                reader.setCursor(reader.getTotalLength());
+            } else {
+                guildName = reader.readString();
+            }
             return source -> getGuildByName(source, guildName);
         }
     }
