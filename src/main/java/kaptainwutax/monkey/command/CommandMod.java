@@ -1,6 +1,9 @@
 package kaptainwutax.monkey.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.LiteralMessage;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import kaptainwutax.monkey.MonkeyBot;
 import kaptainwutax.monkey.holder.HolderGuild;
 import kaptainwutax.monkey.holder.UserInfo;
@@ -21,10 +24,15 @@ import static com.mojang.brigadier.arguments.IntegerArgumentType.*;
 import static com.mojang.brigadier.arguments.LongArgumentType.*;
 import static com.mojang.brigadier.arguments.StringArgumentType.*;
 import static kaptainwutax.monkey.command.arguments.ChannelArgumentType.*;
+import static kaptainwutax.monkey.command.arguments.GuildArgumentType.*;
 import static kaptainwutax.monkey.command.arguments.RoleArgumentType.*;
+import static kaptainwutax.monkey.command.arguments.UserArgumentType.*;
 import static kaptainwutax.monkey.init.Commands.*;
 
 public class CommandMod {
+
+    private static final SimpleCommandExceptionType CANNOT_PUNISH_BOTS_EXCEPTION = new SimpleCommandExceptionType(new LiteralMessage("Cannot punish bots"));
+    private static final SimpleCommandExceptionType CANNOT_BLACKLIST_SELF_EXCEPTION = new SimpleCommandExceptionType(new LiteralMessage("Cannot blacklist your own server"));
 
     public static void register(CommandDispatcher<MessageCommandSource> dispatcher) {
         dispatcher.register(literal("mod", "Moderation tools for Monkey Bot.")
@@ -81,7 +89,20 @@ public class CommandMod {
                     .then(argument("value", bool())
                         .executes(ctx -> setAutomanageMuteRole(ctx.getSource(), getBool(ctx, "value")))))
                 .then(literal("setupRole", "Creates a mute role and sets it up to do its job. The mute role will be auto-managed unless configured otherwise.")
-                    .executes(ctx -> setupMuteRole(ctx.getSource())))));
+                    .executes(ctx -> setupMuteRole(ctx.getSource()))))
+            .then(literal("globalPunish", "Manually globally punish a user. The user will be banned on the discord you run the command, and given a mute role on all discords which support it, subject to the following conditions:\n1. There is an admin of that discord which is also in the discord you run the command.\n2. The discord in which you run the command is not on that discord's blacklist.\n3. That discord has a moderation channel.\nYour name and guild will be broadcast to all affected guilds.")
+                .then(argument("victim", user())
+                    .executes(ctx -> globalPunish(ctx.getSource(), getUser(ctx, "victim"), null))
+                    .then(argument("reason", greedyString())
+                        .executes(ctx -> globalPunish(ctx.getSource(), getUser(ctx, "victim"), getString(ctx, "reason"))))))
+            .then(literal("serverBlacklist", "Commands to manage the server blacklist, which restricts global punishments from the discords on the blacklist from affecting your discord.")
+                .requires(CommandMod::hasModerationChannel)
+                .then(literal("add", "Adds a server to your server blacklist.")
+                    .then(argument("guild", greedyGuild())
+                        .executes(ctx -> addServerToBlacklist(ctx.getSource(), getGuild(ctx, "guild")))))
+                .then(literal("remove", "Removes a server from your server blacklist.")
+                    .then(argument("guild", greedyGuild())
+                        .executes(ctx -> removeServerFromBlacklist(ctx.getSource(), getGuild(ctx, "guild")))))));
     }
 
     private static boolean hasModerationChannel(MessageCommandSource source) {
@@ -96,11 +117,10 @@ public class CommandMod {
         assert source.getGuild() != null;
         HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(source.getGuild()));
 
-        TextChannel moderationChannel = source.getGuild().getTextChannelById(StrUtils.getChannelId(server.controller.moderationChannel));
-        assert moderationChannel != null;
+        TextChannel moderationChannel = server.controller.moderationChannel == null ? null : source.getGuild().getTextChannelById(StrUtils.getChannelId(server.controller.moderationChannel));
 
         source.getChannel().sendMessage(message).queue();
-        if (moderationChannel.getIdLong() != source.getChannel().getIdLong())
+        if (moderationChannel != null && moderationChannel.getIdLong() != source.getChannel().getIdLong())
             moderationChannel.sendMessage(message).queue();
     }
 
@@ -330,4 +350,92 @@ public class CommandMod {
         }
     }
 
+    private static int globalPunish(MessageCommandSource source, User victim, @Nullable String reason) throws CommandSyntaxException {
+        assert source.getGuild() != null;
+
+        if (victim.isBot())
+            throw CANNOT_PUNISH_BOTS_EXCEPTION.create();
+
+        // Ban the user in the discord the command was executed at (no checks needed)
+        source.getGuild().getController().ban(victim, 0, reason).queue();
+
+        for (HolderGuild server : Guilds.instance().servers) {
+            if (server.id.equals(source.getGuild().getId())) continue;
+
+            // Check if monkey is still in the server
+            Guild guild = MonkeyBot.instance().jda.getGuildById(server.id);
+            if (guild == null) continue;
+
+            // Check if that server has a mute role
+            if (server.controller.muteRoleId == null) continue;
+            Role muteRole = guild.getRoleById(server.controller.muteRoleId);
+            if (muteRole == null) continue;
+
+            // Check if an admin is in the source guild
+            boolean isAdminInSourceGuild = false;
+            for (Member member : guild.getMembers()) {
+                if (member.hasPermission(Permission.ADMINISTRATOR) && !member.getUser().isBot()) {
+                    if (source.getGuild().isMember(member.getUser())) {
+                        isAdminInSourceGuild = true;
+                        break;
+                    }
+                }
+            }
+            if (!isAdminInSourceGuild) continue;
+
+            // Check that the source server isn't on this server's blacklist
+            if (server.controller.serverBlacklist.contains(source.getGuild().getId())) continue;
+
+            // Check if the server has a moderation channel
+            if (server.controller.moderationChannel == null) continue;
+            TextChannel moderationChannel = guild.getTextChannelById(server.controller.moderationChannel);
+            if (moderationChannel == null) continue;
+
+            // All the checks passed, apply the mute role
+            try {
+                if (guild.isMember(victim)) {
+                    Member member = guild.getMember(victim);
+                    assert member != null;
+                    guild.getController().addSingleRoleToMember(member, muteRole).queue();
+                } else {
+                    if (server.controller.autoManageMuteRole)
+                        server.controller.leftMutedMembers.add(victim.getId());
+                }
+
+                moderationChannel.sendMessage(String.format("User %s#%s (ID %d) was muted due to a global punishment by %s#%s (ID %d) on server %s (ID %d).%s",
+                        victim.getName(), victim.getDiscriminator(), victim.getIdLong(),
+                        source.getUser().getName(), source.getUser().getDiscriminator(), source.getUser().getIdLong(),
+                        source.getGuild().getName(), source.getGuild().getIdLong(),
+                        reason == null ? "" : (" Reason: " + reason))).queue();
+            } catch (InsufficientPermissionException ignore) {
+                // one guild having bad permissions should not prevent subsequent guilds from attempting to mute
+            }
+        }
+
+        sendModerationFeedback(source, "Globally punished " + victim.getName() + "#" + victim.getDiscriminator());
+
+        return 0;
+    }
+
+    private static int addServerToBlacklist(MessageCommandSource source, Guild guild) throws CommandSyntaxException {
+        assert source.getGuild() != null;
+        if (source.getGuild().equals(guild))
+            throw CANNOT_BLACKLIST_SELF_EXCEPTION.create();
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(source.getGuild()));
+
+        server.controller.serverBlacklist.add(guild.getId());
+        sendModerationFeedback(source, "Added server \"" + guild.getName() + "\" to the server blacklist.");
+
+        return 0;
+    }
+
+    private static int removeServerFromBlacklist(MessageCommandSource source, Guild guild) {
+        assert source.getGuild() != null;
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(source.getGuild()));
+
+        server.controller.serverBlacklist.remove(guild.getId());
+        sendModerationFeedback(source, "Removed server \"" + guild.getName() + "\" from the server blacklist.");
+
+        return 0;
+    }
 }

@@ -43,6 +43,9 @@ public class HolderController {
     // Users which had the mute role but left the discord
     @Expose public Set<String> leftMutedMembers = new HashSet<>(0);
 
+    // Set of untrusted servers
+    @Expose public Set<String> serverBlacklist = new HashSet<>(0);
+
     private transient PingInfo everyonePingInfo = new PingInfo();
     private transient PingInfo herePingInfo = new PingInfo();
     private transient PingInfo rolePingInfo = new PingInfo();
