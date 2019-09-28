@@ -1,4 +1,4 @@
-package kaptainwutax.monkey.command;
+package kaptainwutax.monkey.init;
 
 import com.mojang.brigadier.LiteralMessage;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;

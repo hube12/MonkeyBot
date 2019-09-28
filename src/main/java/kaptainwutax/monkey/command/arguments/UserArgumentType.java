@@ -5,7 +5,7 @@ import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import kaptainwutax.monkey.MonkeyBot;
-import kaptainwutax.monkey.command.Exceptions;
+import kaptainwutax.monkey.init.Exceptions;
 import kaptainwutax.monkey.command.MessageCommandSource;
 import net.dv8tion.jda.api.entities.User;
 
