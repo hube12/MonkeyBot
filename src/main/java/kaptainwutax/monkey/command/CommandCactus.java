@@ -15,11 +15,13 @@ public class CommandCactus {
         dispatcher.register(literal("cactus", "Returns the height of the cactus in that chunk seed.")
             .requires(MessageCommandSource::canUseFunCommands)
             .then(argument("seed", multibaseLong())
-                .executes(ctx -> cactus(ctx.getSource(), getMultibaseLong(ctx, "seed")))));
+                .executes(ctx -> cactus(ctx.getSource(), getMultibaseLong(ctx, "seed"), 63))
+                .then(argument("floorLevel", multibaseLong())
+                    .executes(ctx -> cactus(ctx.getSource(), getMultibaseLong(ctx, "seed"), (int)getMultibaseLong(ctx, "floorLevel"))))));
     }
 
-    private static int cactus(MessageCommandSource source, long seed) {
-        CactusSimulation cactusSimulation = new CactusSimulation(CactusSimulation.DESERT, 62);
+    private static int cactus(MessageCommandSource source, long seed, int floorLevel) {
+        CactusSimulation cactusSimulation = new CactusSimulation(CactusSimulation.DESERT, floorLevel);
         int cactusHeight = cactusSimulation.populate(seed);
 
         source.getChannel().sendMessage("You found a " + cactusHeight + " tall cactus" + MESSAGE[MathHelper.clamp(cactusHeight, 0, MESSAGE.length - 1)]).queue();

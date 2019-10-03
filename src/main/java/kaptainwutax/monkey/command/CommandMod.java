@@ -75,9 +75,6 @@ public class CommandMod {
                     .executes(ctx -> unautoban(ctx.getSource(), getLong(ctx, "userId"), null))
                     .then(argument("reason", greedyString())
                         .executes(ctx -> unautoban(ctx.getSource(), getLong(ctx, "userId"), getString(ctx, "reason"))))))
-            .then(literal("broadcast", "Broadcast a message to all moderation channels on all active discords. Use sparingly.")
-                .then(argument("message", greedyString())
-                    .executes(ctx -> broadcast(ctx.getSource(), getString(ctx, "message")))))
             .then(literal("mute", "Commands to handle the mute role.")
                 .requires(CommandMod::hasModerationChannel)
                 .then(literal("setRole", "Sets the mute role to an existing role on the server.")
@@ -253,26 +250,6 @@ public class CommandMod {
         int count = user.autobannedServers.size();
         user.autobannedServers.clear();
         return count;
-    }
-
-    private static int broadcast(MessageCommandSource source, String message) {
-        assert source.getGuild() != null;
-
-        for(HolderGuild s: Guilds.instance().servers) {
-            if(s.controller.moderationChannel != null && s.controller.sendAlert) {
-                TextChannel moderationChannel = s.getGuild().getTextChannelById(StrUtils.getChannelId(s.controller.moderationChannel));
-
-                if(moderationChannel != null) {
-                    String broadcastMessage = "====== **[BROADCAST]** ";
-                    broadcastMessage += "<@" + source.getUser().getIdLong() + ">";
-                    broadcastMessage += " from **" + source.getGuild().getName() + "** ======\n";
-                    broadcastMessage += message;
-                    Log.print(moderationChannel, broadcastMessage);
-                }
-            }
-        }
-
-        return 0;
     }
 
     private static int setMuteRole(MessageCommandSource source, Role role) {

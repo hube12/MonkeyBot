@@ -69,7 +69,7 @@ public class CactusSimulation {
 
     public boolean isAir(int x, int y, int z) {
         int height = this.heightMap[x + z * 32];
-        return y > height;
+        return y > height || y < 0;
     }
 
 }
