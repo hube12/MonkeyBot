@@ -2,15 +2,20 @@ package kaptainwutax.monkey.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import kaptainwutax.monkey.init.Commands;
+import kaptainwutax.monkey.utility.Rand;
+import kaptainwutax.monkey.utility.math.LCG;
 
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Pattern;
+
+import static com.mojang.brigadier.arguments.StringArgumentType.getString;
+import static com.mojang.brigadier.arguments.StringArgumentType.greedyString;
 import static kaptainwutax.monkey.command.arguments.MultibaseLongArgumentType.*;
 import static kaptainwutax.monkey.init.Commands.*;
 
 public class CommandLcg {
-
-    private static final long MULTIPLIER = 0x5deece66dL;
-    private static final long ADDEND = 0xbL;
-    private static final long MASK = 0xffffffffffffL;
 
     public static void register(CommandDispatcher<MessageCommandSource> dispatcher) {
         dispatcher.register(literal("lcg", "Prints the constants for the Java LCG")
@@ -28,36 +33,35 @@ public class CommandLcg {
                 .then(argument("seed", multibaseLong())
                     .executes(ctx -> next(ctx.getSource(), getMultibaseLong(ctx, "seed"), -1))
                     .then(argument("n", multibaseLong())
-                        .executes(ctx -> next(ctx.getSource(), getMultibaseLong(ctx, "seed"), -getMultibaseLong(ctx, "n")))))));
+                        .executes(ctx -> next(ctx.getSource(), getMultibaseLong(ctx, "seed"), -getMultibaseLong(ctx, "n"))))))
+            .then(argument("command", greedyString())
+                    .executes(ctx -> execute(ctx.getSource(), getString(ctx, "command")))));
+
     }
 
+    private static int execute(MessageCommandSource source, String message) {
+        String[] stuffs = message.trim().split(Pattern.quote("."));
+        return 0;
+    }
+
+
     private static int printDefaultLCGConstants(MessageCommandSource source) {
-        source.getChannel().sendMessage(formatLCGConstants(MULTIPLIER, ADDEND)).queue();
+        source.getChannel().sendMessage(Rand.JAVA_LCG.toPrettyString()).queue();
         return 0;
     }
 
     private static int combine(MessageCommandSource source, long n) {
-        LCG lcg = combine(n);
-        source.getChannel().sendMessage(formatLCGConstants(lcg.multiplier, lcg.addend)).queue();
+        source.getChannel().sendMessage(Rand.JAVA_LCG.combine(n).toPrettyString()).queue();
         return 0;
     }
 
     private static int next(MessageCommandSource source, long seed, long n) {
-        LCG lcg = combine(n);
-        seed = seed * lcg.multiplier + lcg.addend;
-        seed &= MASK;
-        source.getChannel().sendMessage(formatHexDec(seed)).queue();
+        long nextSeed = Rand.JAVA_LCG.combine(n).nextSeed(seed);
+        source.getChannel().sendMessage(String.format("0x%X (%d)", nextSeed, nextSeed)).queue();
         return 0;
     }
 
-    private static String formatLCGConstants(long multiplier, long addend) {
-        return "Multiplier: " + formatHexDec(multiplier) + ", Addend: " + formatHexDec(addend);
-    }
-
-    private static String formatHexDec(long n) {
-        return String.format("0x%X (%d)", n, n);
-    }
-
+    /* OLD CODE
     private static long parseSeed(String str) throws NumberFormatException {
         long n;
         if (str.startsWith("0x") || str.startsWith("0X")) {
@@ -69,23 +73,21 @@ public class CommandLcg {
     }
 
     private static LCG combine(long n) {
-        /*
-         * This works by splitting n into sums of powers of 2, and combining those power of 2 LCGs.
-         * An LCG (a1, b1) can be combined with an LCG (a2, b2) to make an LCG (a3, b3) by:
-         * s' = a2 * (a1 * s + b1) + b2 = (a1 * a2) * s + (a2 * b1 + b2), hence
-         * a3 = a1 * a2
-         * b3 = a2 * b1 + b2
-         */
+         // This works by splitting n into sums of powers of 2, and combining those power of 2 LCGs.
+         // An LCG (a1, b1) can be combined with an LCG (a2, b2) to make an LCG (a3, b3) by:
+         // s' = a2 * (a1 * s + b1) + b2 = (a1 * a2) * s + (a2 * b1 + b2), hence
+         // a3 = a1 * a2
+         // b3 = a2 * b1 + b2
 
-        // Start with the identity LCG
+        //Start with the identity LCG*
         long multiplier = 1;
         long addend = 0;
 
-        // The LCG to combine with at the current step
+        //The LCG to combine with at the current step
         long intermediateMultiplier = MULTIPLIER;
         long intermediateAddend = ADDEND;
 
-        // for each bit from right to left
+        //for each bit from right to left
         for (long k = n; k != 0; k >>>= 1) {
             if ((k & 1) != 0) { // if the bit is 1
                 // combine the current LCG with the intermediate LCG
@@ -111,6 +113,6 @@ public class CommandLcg {
             this.multiplier = multiplier;
             this.addend = addend;
         }
-    }
+    }*/
 
 }
