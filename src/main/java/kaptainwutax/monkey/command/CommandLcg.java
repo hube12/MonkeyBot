@@ -1,13 +1,10 @@
 package kaptainwutax.monkey.command;
 
 import com.mojang.brigadier.CommandDispatcher;
-import kaptainwutax.monkey.init.Commands;
 import kaptainwutax.monkey.utility.Rand;
 import kaptainwutax.monkey.utility.math.LCG;
 
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 import static com.mojang.brigadier.arguments.StringArgumentType.getString;
@@ -34,16 +31,132 @@ public class CommandLcg {
                     .executes(ctx -> next(ctx.getSource(), getMultibaseLong(ctx, "seed"), -1))
                     .then(argument("n", multibaseLong())
                         .executes(ctx -> next(ctx.getSource(), getMultibaseLong(ctx, "seed"), -getMultibaseLong(ctx, "n"))))))
-            .then(argument("command", greedyString())
-                    .executes(ctx -> execute(ctx.getSource(), getString(ctx, "command")))));
+            .then(literal("print", "Executes custom LCG command and prints the result.")
+                .then(argument("command", greedyString())
+                        .executes(ctx -> execute(ctx.getSource(), getString(ctx, "command"))))));
 
     }
 
     private static int execute(MessageCommandSource source, String message) {
-        String[] stuffs = message.trim().split(Pattern.quote("."));
+        String[] calls = message.trim().split(Pattern.quote("."));
+
+        if(calls.length < 1) {
+            source.getChannel().sendMessage("Not enough arguments.").queue();
+            return 1;
+        }
+
+        if(!isValidCall(calls[0], source))return 1;
+        IExecutable caller = getCallerObject(calls[0]);
+
+        if(caller == null) {
+            source.getChannel().sendMessage("Unknown caller at: [" + calls[0] + "].").queue();
+            return 1;
+        }
+
+        Object lastObject = caller;
+
+        for(int i = 1; i < calls.length; i++) {
+            String call = calls[i];
+
+            if(!isValidCall(call, source))return 1;
+
+            Object returnedObject = caller.callMethod(getName(call), getParams(call));
+
+            if(returnedObject == null) {
+                source.getChannel().sendMessage("Unknown call at: [" + call + "].").queue();
+                return 1;
+            }
+
+            if(returnedObject instanceof IExecutable) {
+                caller = (IExecutable)returnedObject;
+            } else {
+                if(i != calls.length - 1) {
+                    source.getChannel().sendMessage("Variable [" + returnedObject.getClass().getName() + "] cannot be used for calls.").queue();
+                    return 1;
+                }
+            }
+
+            lastObject = returnedObject;
+        }
+
+        source.getChannel().sendMessage(lastObject.toString()).queue();
+
         return 0;
     }
 
+    private static String getName(String call) {
+        return call.split(Pattern.quote("("))[0].trim().toLowerCase(Locale.ENGLISH);
+    }
+
+    private static String[] getParams(String call) {
+        StringBuilder paramsRaw = new StringBuilder();
+        int bracketDepth = 0;
+
+        for(int i = 0; i < call.length(); i++) {
+            char c = call.charAt(i);
+
+            if(c == '(') {
+                bracketDepth++;
+            } else if(c == ')') {
+                bracketDepth--;
+            } else if(bracketDepth == 1) {
+                paramsRaw.append(c);
+            }
+        }
+
+        if(paramsRaw.toString().isEmpty())return new String[0];
+
+        String[] params = paramsRaw.toString().split(",");
+
+        for (int i = 0; i < params.length; i++) {
+            params[i] = params[i].trim();
+        }
+
+        return params;
+    }
+
+    private static IExecutable getCallerObject(String call) {
+        String name = getName(call);
+
+        if(name.equalsIgnoreCase("LCG")) {
+            return new LCG(0, 0, 0).callConstructor(getParams(call));
+        } else if(name.equalsIgnoreCase("Rand")) {
+            return new Rand(0).callConstructor(getParams(call));
+        }
+
+        return null;
+    }
+
+    private static boolean isValidCall(String call, MessageCommandSource source) {
+        boolean hasName = false;
+        boolean hasBracket = false;
+        int bracketDepth = 0;
+
+        for(int i = 0; i < call.length(); i++) {
+            char c = call.charAt(i);
+
+            if(c == '(') {
+                bracketDepth++;
+                if(!hasBracket)hasBracket = true;
+            } else if(c == ')') {
+                bracketDepth--;
+            }
+
+            if(!hasName && !hasBracket && Character.isAlphabetic(c)) {
+                hasName = true;
+            }
+        }
+
+        if(!hasName) {
+            source.getChannel().sendMessage("Attempting to call function without a name at: [" + call + "].").queue();
+            return false;
+        } else if(bracketDepth != 0) {
+            source.getChannel().sendMessage("Attempting to call function with invalid number of brackets at: [" + call + "].").queue();
+            return false;
+        }
+
+        return true;
+    }
 
     private static int printDefaultLCGConstants(MessageCommandSource source) {
         source.getChannel().sendMessage(Rand.JAVA_LCG.toPrettyString()).queue();
