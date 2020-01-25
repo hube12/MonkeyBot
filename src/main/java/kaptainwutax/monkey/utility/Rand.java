@@ -73,7 +73,7 @@ public class Rand implements Cloneable, IExecutable {
     }
 
     public double nextDouble() {
-        return (((long)this.next(27) << 27) + this.next(27)) / (double)(1L << 54);
+        return (((long)next(26) << 27) + next(27)) / (double)(1L << 53);
     }
 
     @Override
