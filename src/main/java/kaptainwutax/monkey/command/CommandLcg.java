@@ -16,7 +16,6 @@ public class CommandLcg {
 
     public static void register(CommandDispatcher<MessageCommandSource> dispatcher) {
         dispatcher.register(literal("lcg", "Prints the constants for the Java LCG")
-            .requires(MessageCommandSource::canUseFunCommands)
             .executes(ctx -> printDefaultLCGConstants(ctx.getSource()))
             .then(literal("combine", "Prints the LCG equivalent to calling the Java LCG *n* times")
                 .then(argument("n", multibaseLong())

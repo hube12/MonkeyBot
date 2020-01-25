@@ -23,7 +23,7 @@ public class HolderController {
             "user disrespected the tall kaktoos."
     };
 
-    private static final String[] YUN_DEFENSE_TRIGGERS = {"im", "i'm", "i am", "i’m", "i‘m", "i`m"};
+    private static final String[] YUN_DEFENSE_TRIGGERS = {"im ", "i'm ", "i am ", "i’m ", "i‘m ", "i`m "};
     private static final String[] PUNCTUATION = {".", ",", "!", "?", ":", ";"};
 
     public HolderGuild server;
@@ -126,16 +126,38 @@ public class HolderController {
         // Yun Defense
         if (this.yunDefense && event.getAuthor().getIdLong() == 389507745113440291L) { // Yun's ID
             String message = event.getMessage().getContentDisplay();
-            String lower = message.toLowerCase(Locale.ENGLISH);
-            int imIndex = Arrays.stream(YUN_DEFENSE_TRIGGERS).filter(lower::contains).mapToInt(s -> lower.lastIndexOf(s) + s.length()).max().orElse(-1);
-            if (imIndex != -1) {
-                String rest = message.substring(imIndex);
-                int endIndex = Arrays.stream(PUNCTUATION).mapToInt(s -> rest.contains(s) ? rest.indexOf(s) - 1 : rest.length()).min().orElse(rest.length());
-                String object = rest.substring(0, endIndex).trim();
-                if (!object.isEmpty()) {
-                    event.getChannel().sendMessage("Hi Yun, I'm Monkey!")
-                            .queue(m -> m.editMessage("Hi " + object + ", I'm Monkey!").queue());
+            String lowercaseMessage = message.toLowerCase(Locale.ENGLISH);
+
+            int lastOccurrence = -1;
+            String trigger = "";
+
+            for(String yunDefenseTrigger: YUN_DEFENSE_TRIGGERS) {
+                int occurrence = lowercaseMessage.lastIndexOf(yunDefenseTrigger);
+                if (occurrence == -1 || occurrence >= message.length()) continue;
+                if (occurrence > lastOccurrence) {
+                    lastOccurrence = occurrence;
+                    trigger = yunDefenseTrigger;
                 }
+            }
+
+            if(lastOccurrence < 0)return;
+
+            String rest = "";
+
+            for(int i = lastOccurrence + trigger.length(); i < message.length(); i++) {
+                String c = message.charAt(i) + "";
+
+                if(Arrays.stream(PUNCTUATION).noneMatch(s -> s.equals(c))) {
+                    rest += c;
+                } else {
+                    break;
+                }
+            }
+
+            if(!rest.isEmpty()) {
+                String finalRest = rest;
+                event.getChannel().sendMessage("Hi Yun, I'm Monkey!")
+                        .queue(m -> m.editMessage("Hi " + finalRest + ", I'm Monkey!").queue());
             }
         }
 
