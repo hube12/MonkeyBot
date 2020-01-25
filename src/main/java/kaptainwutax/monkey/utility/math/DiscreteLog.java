@@ -62,7 +62,7 @@ public class DiscreteLog {
         if (bbar % gcd != 0) {
             throw NO_SOLUTIONS_EXCEPTION.create();
         }
-        return (bbar * euclideanHelper(abar,(1L << 48)) & 0x3FFFFFFFFFFFL)/gcd; //+ i*(1L << 48)/gcd;
+        return (bbar * euclideanHelper(abar,(1L << 48)) & 0xFFFFFFFFFFFFL)/gcd; //+ i*(1L << 48)/gcd;
     }
 
 }
