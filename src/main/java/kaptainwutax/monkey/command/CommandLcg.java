@@ -1,7 +1,9 @@
 package kaptainwutax.monkey.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import kaptainwutax.monkey.utility.Rand;
+import kaptainwutax.monkey.utility.math.DiscreteLog;
 import kaptainwutax.monkey.utility.math.LCG;
 
 import java.util.Locale;
@@ -31,6 +33,11 @@ public class CommandLcg {
                     .executes(ctx -> next(ctx.getSource(), getMultibaseLong(ctx, "seed"), -1))
                     .then(argument("n", multibaseLong())
                         .executes(ctx -> next(ctx.getSource(), getMultibaseLong(ctx, "seed"), -getMultibaseLong(ctx, "n"))))))
+            .then(literal("distance", "Prints the number of calls required to reach the number from zero, or the number of calls between the two inputs")
+                .then(argument("a", multibaseLong())
+                    .executes(ctx -> distance(ctx.getSource(), 0, getMultibaseLong(ctx, "a")))
+                    .then(argument("b", multibaseLong())
+                        .executes(ctx -> distance(ctx.getSource(), getMultibaseLong(ctx, "a"), getMultibaseLong(ctx, "b"))))))
             .then(literal("print", "Executes custom LCG command and prints the result.")
                 .then(argument("command", greedyString())
                         .executes(ctx -> execute(ctx.getSource(), getString(ctx, "command"))))));
@@ -171,6 +178,14 @@ public class CommandLcg {
     private static int next(MessageCommandSource source, long seed, long n) {
         long nextSeed = Rand.JAVA_LCG.combine(n).nextSeed(seed);
         source.getChannel().sendMessage(String.format("0x%X (%d)", nextSeed, nextSeed)).queue();
+        return 0;
+    }
+
+    private static int distance(MessageCommandSource source, long a, long b) throws CommandSyntaxException {
+        long aFromZero = DiscreteLog.distanceFromZero(a);
+        long bFromZero = DiscreteLog.distanceFromZero(b);
+        long distance = (bFromZero - aFromZero) << 16 >> 16; // removes top bits and copies sign bits back down
+        source.getChannel().sendMessage(String.format("0x%X (%d)", distance & ((1L << 48) - 1), distance)).queue();
         return 0;
     }
 
