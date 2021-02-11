@@ -33,6 +33,7 @@ public class HolderController {
     @Expose public boolean banMessage = true;
     @Expose public boolean sendAlert = true;
     @Expose public boolean funCommands = false;
+    @Expose public boolean sayCommand = true;
     @Expose public boolean yunDefense = true;
 
     @Expose private MessageLimiter noobLimit = new MessageLimiter(-1, -1, -1,-1);

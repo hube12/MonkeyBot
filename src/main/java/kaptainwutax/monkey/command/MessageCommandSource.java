@@ -93,6 +93,15 @@ public class MessageCommandSource {
         return holder.controller.funCommands;
     }
 
+    public boolean canUseSayCommand(){
+        if (isDMs() || isAdministrator())
+            return true;
+        Guild guild = getGuild();
+        assert guild != null;
+        HolderGuild holder = Guilds.instance().getOrCreateServer(new HolderGuild(guild));
+        return holder.controller.sayCommand;
+    }
+
     /**
      * Checks if monkey bot has the given permissions. If {@code permName} is not {@code null},
      * also sends an error message saying that monkey needs {@code permName}. Returns whether
