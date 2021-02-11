@@ -222,7 +222,7 @@ public class CommandMod {
             if (guild == null) continue;
 
             guild.retrieveBanById(user.id).queue(ban -> {
-                guild.getController().unban(ban.getUser()).queue();
+                guild.unban(ban.getUser()).queue();
 
                 if (!hasApologized.getAndSet(true)) {
                     ban.getUser().openPrivateChannel().queue(dms -> {
@@ -300,7 +300,7 @@ public class CommandMod {
 
         sendModerationFeedback(source, "Setting up mute role...");
 
-        source.getGuild().getController().createRole().setName("Muted").setPermissions(Collections.emptyList()).queue(muteRole -> {
+        source.getGuild().createRole().setName("Muted").setPermissions(Collections.emptyList()).queue(muteRole -> {
             server.controller.muteRoleId = muteRole.getId();
             for (GuildChannel channel : source.getGuild().getChannels()) {
                 if (channel.getParent() == null || !channel.getPermissionOverrides().isEmpty())
@@ -334,7 +334,7 @@ public class CommandMod {
             throw CANNOT_PUNISH_BOTS_EXCEPTION.create();
 
         // Ban the user in the discord the command was executed at (no checks needed)
-        source.getGuild().getController().ban(victim, 0, reason).queue();
+        source.getGuild().ban(victim, 0, reason).queue();
 
         for (HolderGuild server : Guilds.instance().servers) {
             if (server.id.equals(source.getGuild().getId())) continue;
@@ -373,7 +373,7 @@ public class CommandMod {
                 if (guild.isMember(victim)) {
                     Member member = guild.getMember(victim);
                     assert member != null;
-                    guild.getController().addSingleRoleToMember(member, muteRole).queue();
+                    guild.addRoleToMember(member, muteRole).queue();
                 } else {
                     if (server.controller.autoManageMuteRole)
                         server.controller.leftMutedMembers.add(victim.getId());

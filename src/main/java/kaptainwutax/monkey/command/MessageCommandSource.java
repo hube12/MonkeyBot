@@ -77,7 +77,8 @@ public class MessageCommandSource {
             return false;
         Member member = getMember();
         assert member != null;
-        return member.hasPermission(Permission.ADMINISTRATOR);
+        boolean b=member.hasPermission(Permission.ADMINISTRATOR);
+        return b;
     }
 
     /**
