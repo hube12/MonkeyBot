@@ -10,4 +10,4 @@ Set the moderation channel (need admin perms) : `monkey mod setChannel <id>`
 
 Enable fun command (ping, say...) : `monkey mod funCommands true`
 
-Disable some commands : 
+Disable some commands : `monkey mod disableSay true`
