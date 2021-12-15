@@ -7,7 +7,7 @@ import kaptainwutax.monkey.init.Guilds;
 import kaptainwutax.monkey.utility.*;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
-import net.dv8tion.jda.api.events.guild.member.GuildMemberLeaveEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 import javax.annotation.Nullable;
@@ -37,7 +37,7 @@ public class HolderController {
     @Expose public boolean yunDefense = true;
 
     @Expose private MessageLimiter noobLimit = new MessageLimiter(-1, -1, -1,-1);
-    @Expose private List<RoleMap> roleLimits = new ArrayList<RoleMap>();
+    @Expose private final List<RoleMap> roleLimits = new ArrayList<RoleMap>();
 
     @Expose @Nullable public String muteRoleId;
     @Expose public boolean autoManageMuteRole = false;
@@ -93,10 +93,10 @@ public class HolderController {
         }
     }
 
-    public void onMemberLeave(GuildMemberLeaveEvent event) {
+    public void onMemberLeave(GuildMemberRemoveEvent event) {
         if (autoManageMuteRole && muteRoleId != null) {
             Role muteRole = event.getGuild().getRoleById(muteRoleId);
-            if (muteRole != null) {
+            if (muteRole != null && event.getMember()!=null) {
                 if (event.getMember().getRoles().contains(muteRole)) {
                     leftMutedMembers.add(event.getMember().getId());
                 }
@@ -180,9 +180,8 @@ public class HolderController {
 
                     if (s.controller.autoban) {
                         Log.print(moderationChannel, "Banned <@" + event.getAuthor().getIdLong() + ">, please double check to make sure it wasn't a mistake.");
-                        s.getGuild().ban(event.getMember(), 0, "Automatic ping ban from " + event.getGuild().getName() + ".").queue(ban -> {
-                            MonkeyBot.instance().config.getOrCreateUser(event.getMember().getIdLong()).autobannedServers.add(s.getGuild().getId());
-                        }, t -> {
+                        s.getGuild().ban(event.getMember(), 0, "Automatic ping ban from " + event.getGuild().getName() + ".")
+                                .queue(ban -> MonkeyBot.instance().config.getOrCreateUser(event.getMember().getIdLong()).autobannedServers.add(s.getGuild().getId()), t -> {
                         });
                     }
                 }
@@ -198,9 +197,8 @@ public class HolderController {
         if(!force && !this.autoban)return;
         if(this.banMessage)Log.print(event.getTextChannel(), BAN_MESSAGES[new Random().nextInt(BAN_MESSAGES.length)].replaceFirst("user", "<@" + event.getMember().getId() + ">"));
         Log.print(moderationChannel, "Banned <@" + event.getAuthor().getIdLong() + ">, please double check to make sure it wasn't a mistake.");
-        this.getServer().getGuild().ban(event.getMember(), 0, "Automatic ping ban.").queue(ban -> {
-            MonkeyBot.instance().config.getOrCreateUser(event.getMember().getIdLong()).autobannedServers.add(getServer().getGuild().getId());
-        });
+        this.getServer().getGuild().ban(event.getMember(), 0, "Automatic ping ban.")
+                .queue(ban -> MonkeyBot.instance().config.getOrCreateUser(event.getMember().getIdLong()).autobannedServers.add(getServer().getGuild().getId()));
     }
 
     public boolean isConsideredSpam(MessageReceivedEvent event) {
@@ -333,7 +331,7 @@ public class HolderController {
         public boolean equals(Object obj) {
             if (obj == this) return true;
             if (obj == null) return false;
-            if (obj.getClass() != HolderController.class) return false;
+            if (obj.getClass() != RoleMap.class) return false;
             RoleMap target = ((RoleMap) obj);
             return target.getId() == this.id;
         }
