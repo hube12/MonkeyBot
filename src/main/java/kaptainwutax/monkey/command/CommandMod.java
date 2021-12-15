@@ -33,6 +33,7 @@ public class CommandMod {
 
     private static final SimpleCommandExceptionType CANNOT_PUNISH_BOTS_EXCEPTION = new SimpleCommandExceptionType(new LiteralMessage("Cannot punish bots"));
     private static final SimpleCommandExceptionType CANNOT_BLACKLIST_SELF_EXCEPTION = new SimpleCommandExceptionType(new LiteralMessage("Cannot blacklist your own server"));
+    private static final SimpleCommandExceptionType CANNOT_LIST_BLACKLIST = new SimpleCommandExceptionType(new LiteralMessage("Cannot list the blacklist as you are not the holder guild"));
 
     public static void register(CommandDispatcher<MessageCommandSource> dispatcher) {
         dispatcher.register(literal("mod", "Moderation tools for Monkey Bot.")
@@ -98,6 +99,8 @@ public class CommandMod {
                                         .executes(ctx -> globalPunish(ctx.getSource(), getUser(ctx, "victim"), getString(ctx, "reason"))))))
                 .then(literal("serverBlacklist", "Commands to manage the server blacklist, which restricts global punishments from the discords on the blacklist from affecting your discord.")
                         .requires(CommandMod::hasModerationChannel)
+                        .then(literal("list", "List server in the server blacklist.")
+                                        .executes(ctx -> getServerBlackList(ctx.getSource())))
                         .then(literal("add", "Adds a server to your server blacklist.")
                                 .then(argument("guild", greedyGuild())
                                         .executes(ctx -> addServerToBlacklist(ctx.getSource(), getGuild(ctx, "guild")))))
@@ -416,6 +419,16 @@ public class CommandMod {
 
         server.controller.serverBlacklist.add(guild.getId());
         sendModerationFeedback(source, "Added server \"" + guild.getName() + "\" to the server blacklist.");
+
+        return 0;
+    }
+
+    private static int getServerBlackList(MessageCommandSource source) {
+        assert source.getGuild() != null;
+        HolderGuild server = Guilds.instance().getOrCreateServer(new HolderGuild(source.getGuild()));
+        String list=server.controller.serverBlacklist.stream()
+                .reduce(new StringBuilder(), (acc,s)->acc.append(s).append("\n"),StringBuilder::append).toString();
+        sendModerationFeedback(source, list.isEmpty()?"No blacklist":list );
 
         return 0;
     }

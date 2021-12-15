@@ -14,7 +14,8 @@ import static kaptainwutax.monkey.command.arguments.MultibaseLongArgumentType.mu
 
 public class CommandLcg {
     public static void register(final CommandDispatcher<MessageCommandSource> dispatcher) {
-        dispatcher.register(Commands.literal("lcg", "Prints the constants for the Java LCG")
+        dispatcher.register(
+                Commands.literal("lcg", "Prints the constants for the Java LCG")
                 .executes(ctx -> printDefaultLCGConstants(ctx.getSource()))
                 .then(Commands.literal("combine", "Prints the LCG equivalent to calling the Java LCG *n* times")
                         .then(Commands.argument("n", multibaseLong())
