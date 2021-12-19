@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.internal.utils.tuple.Pair;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -46,6 +47,11 @@ public class HolderController {
 
     // Set of untrusted servers
     @Expose public Set<String> serverBlacklist = new HashSet<>(0);
+
+    // Set of user id, guild id of currently processed events
+    public Map<Pair<String,String>,Long> receivedRecently=new HashMap<>();
+    // Threshold before eviction in the previous map (5 minutes in milliseconds)
+    public Long THRESHOLD =5L*60L*1000L;
 
     private transient PingInfo everyonePingInfo = new PingInfo();
     private transient PingInfo herePingInfo = new PingInfo();
@@ -164,6 +170,8 @@ public class HolderController {
 
         if (!this.isConsideredSpam(event)) return;
 
+        if (this.wasReceived(event)) return;
+
         if (MonkeyBot.instance().config.simulateBans) {
             event.getChannel().sendMessage("If I were real monkey bot, I would have banned you O_o").queue();
             return;
@@ -173,7 +181,7 @@ public class HolderController {
         if(!this.sendAlert)return;
 
         for(HolderGuild s: Guilds.instance().servers) {
-            if(!s.equals(this.getServer()) && s.controller.moderationChannel != null && s.controller.sendAlert) {
+            if(!s.equals(this.getServer()) && s.controller.moderationChannel != null && s.controller.sendAlert && s.getGuild()!=null) {
                 TextChannel moderationChannel = s.getGuild().getTextChannelById(StrUtils.getChannelId(s.controller.moderationChannel));
                 if (moderationChannel != null) {
                     Log.print(moderationChannel, "Spam alert from **" + event.getGuild().getName() + "**. User <@" + event.getAuthor().getIdLong() + "> has been spamming pings.");
@@ -205,6 +213,12 @@ public class HolderController {
         assert event.getMember() != null;
         MessageLimiter messageMentions = new MessageLimiter(this.getMentions(event));
         return !messageMentions.respectsLimits(this.getLimit(event.getMember()));
+    }
+
+    public boolean wasReceived(MessageReceivedEvent event){
+        assert event.getMember() != null;
+        this.receivedRecently.entrySet().removeIf(x-> x.getValue() < (System.currentTimeMillis() - THRESHOLD));
+        return this.receivedRecently.put(Pair.of(event.getMember().getId(),event.getGuild().getId()),System.currentTimeMillis()) != null;
     }
 
     public MessageLimiter getLimit(Member member) {
